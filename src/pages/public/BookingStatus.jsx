@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { CalendarDays, Car, CheckCircle2, Clock, Hash, KeyRound, MapPin, Phone, Search, Undo2, XCircle } from 'lucide-react'
+import { CalendarDays, Car, CheckCircle2, Clock, Hash, KeyRound, MapPin, Phone, Search, Undo2, UserRound, XCircle } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { supabase } from '../../lib/supabase'
 import Badge from '../../components/ui/Badge'
@@ -128,7 +128,7 @@ export default function BookingStatus() {
             <div className="card card-pad status-card">
               <div className="flex items-center justify-between wrap gap-3">
                 <div>
-                  <span className="eyebrow">Reference</span>
+                  <span className="eyebrow">{result.customer_name ? `Booking for ${result.customer_name}` : 'Reference'}</span>
                   <h2 style={{ fontSize: 24, letterSpacing: '0.04em' }}>{result.reference}</h2>
                 </div>
                 <Badge status={effectiveStatus}>
@@ -169,6 +169,7 @@ export default function BookingStatus() {
 
               <ul className="info-list">
                 <li><CalendarDays size={18} /> {formatDate(result.pickup_date)} to {formatDate(result.return_date)} ({days} {days === 1 ? 'day' : 'days'})</li>
+                {result.customer_name && <li><UserRound size={18} /> {result.customer_name}</li>}
                 {result.pickup_location && <li><MapPin size={18} /> {result.pickup_location}</li>}
                 <li><Car size={18} /> {formatCurrency(result.total)} rental + {formatCurrency(result.deposit ?? settings.deposit)} refundable deposit</li>
               </ul>
