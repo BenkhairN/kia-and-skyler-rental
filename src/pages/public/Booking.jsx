@@ -3,7 +3,6 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { AlertTriangle, CalendarCheck, CheckCircle2, ChevronLeft, ChevronRight, Copy, Check, Mail, Phone, Search, UserRound, X } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { useToast } from '../../context/ToastContext'
-import { pickupLocations } from '../../data/site'
 import CarImage from '../../components/ui/CarImage'
 import AvailabilityCalendar from '../../components/ui/AvailabilityCalendar'
 import { daysBetween, formatCurrency, formatDate, todayISO } from '../../utils/format'
@@ -14,7 +13,7 @@ const emptyForm = {
   customerName: '',
   customerEmail: '',
   customerPhone: '',
-  pickupLocation: pickupLocations[0],
+  pickupLocation: '',
   pickupDate: '',
   returnDate: '',
   notes: '',
@@ -280,14 +279,6 @@ export default function Booking() {
                 )}
               </div>
 
-              <div className="field span-2">
-                <label htmlFor="pickupLocation">Pick-up location</label>
-                <select id="pickupLocation" className="select" value={form.pickupLocation} onChange={set('pickupLocation')}>
-                  {pickupLocations.map((l) => (
-                    <option key={l} value={l}>{l}</option>
-                  ))}
-                </select>
-              </div>
             </div>
 
             <h3 style={{ fontSize: 18, marginTop: 32 }}>Your details</h3>

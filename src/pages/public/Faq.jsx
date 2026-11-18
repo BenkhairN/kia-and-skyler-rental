@@ -15,7 +15,7 @@ export const faqs = [
   },
   {
     q: 'How much does a rental cost?',
-    a: 'Rates start at $70.00 per day depending on the vehicle. Your exact total (days x rate + deposit) is shown live on the booking page before you send the request.',
+    a: 'The rental rate is $70.00 per day. Your exact total (days x rate + deposit) is shown live on the booking page before you send the request.',
   },
   {
     q: 'Do you deliver or pick up the car?',
