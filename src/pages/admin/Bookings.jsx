@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AlertTriangle, CalendarX, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, CalendarX, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { useToast } from '../../context/ToastContext'
 import { bookingStatuses } from '../../data/bookings'
@@ -16,6 +16,22 @@ const cap = (s) => s[0].toUpperCase() + s.slice(1)
 const selectableStatuses = bookingStatuses.filter((s) => s !== 'active')
 const shortDate = (d) =>
   new Date(`${d}T00:00:00`).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' })
+const shortStamp = (d) =>
+  new Date(d).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit' })
+const timeStamp = (d) =>
+  new Date(d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+
+function SortTh({ id, sort, onSort, children }) {
+  const active = sort.key === id
+  return (
+    <th>
+      <button type="button" className={`th-sort ${active ? 'active' : ''}`} onClick={() => onSort(id)}>
+        {children}
+        {active ? (sort.dir === 1 ? <ArrowUp size={12} /> : <ArrowDown size={12} />) : <ArrowUpDown size={12} />}
+      </button>
+    </th>
+  )
+}
 
 const emptyForm = {
   carId: '',
@@ -35,6 +51,7 @@ export default function Bookings() {
   const [params] = useSearchParams()
   const [query, setQuery] = useState(params.get('q') || '')
   const [status, setStatus] = useState('all')
+  const [sort, setSort] = useState({ key: 'createdAt', dir: -1 })
   const [viewing, setViewing] = useState(null)
   const [deleting, setDeleting] = useState(null)
   const [creating, setCreating] = useState(false)
@@ -44,6 +61,19 @@ export default function Bookings() {
 
   const carById = (id) => cars.find((c) => c.id === id)
 
+  const sortValue = (b, key) => {
+    switch (key) {
+      case 'id': return b.id
+      case 'customer': return b.customerName.toLowerCase()
+      case 'vehicle': { const c = carById(b.carId); return c ? `${c.name} ${c.year}` : '' }
+      case 'pickupDate': return b.pickupDate
+      case 'createdAt': return b.createdAt
+      case 'total': return b.total
+      case 'status': return b.status
+      default: return ''
+    }
+  }
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return [...bookings]
@@ -52,9 +82,20 @@ export default function Bookings() {
         const text = `${b.id} ${b.customerName} ${b.customerPhone} ${b.customerEmail} ${car?.name || ''}`.toLowerCase()
         return (!q || text.includes(q)) && (status === 'all' || b.status === status)
       })
-      .sort((a, b) => (a.pickupDate < b.pickupDate ? 1 : -1))
+      .sort((a, b) => {
+        const va = sortValue(a, sort.key)
+        const vb = sortValue(b, sort.key)
+        return (va < vb ? -1 : va > vb ? 1 : 0) * sort.dir
+      })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookings, cars, query, status])
+  }, [bookings, cars, query, status, sort])
+
+  const toggleSort = (key) =>
+    setSort((s) => (s.key === key ? { key, dir: -s.dir } : { key, dir: -1 }))
+
+  const th = (id, children) => (
+    <SortTh key={id} id={id} sort={sort} onSort={toggleSort}>{children}</SortTh>
+  )
 
   const counts = bookingStatuses.reduce((acc, s) => ({ ...acc, [s]: bookings.filter((b) => b.status === s).length }), {})
 
@@ -174,12 +215,13 @@ export default function Bookings() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Reference</th>
-                  <th>Customer</th>
-                  <th>Vehicle</th>
-                  <th>Dates</th>
-                  <th>Total</th>
-                  <th>Status</th>
+                  {th('id', 'Reference')}
+                  {th('customer', 'Customer')}
+                  {th('vehicle', 'Vehicle')}
+                  {th('pickupDate', 'Dates')}
+                  {th('createdAt', 'Booked')}
+                  {th('total', 'Total')}
+                  {th('status', 'Status')}
                   <th className="text-right">Actions</th>
                 </tr>
               </thead>
@@ -215,6 +257,10 @@ export default function Bookings() {
                         </div>
                       </td>
                       <td className="td-muted">{shortDate(b.pickupDate)} – {shortDate(b.returnDate)}</td>
+                      <td className="td-muted">
+                        {shortStamp(b.createdAt)}
+                        <div className="small" style={{ opacity: 0.7 }}>{timeStamp(b.createdAt)}</div>
+                      </td>
                       <td className="td-strong">{formatCurrency(b.total)}</td>
                       <td>
                         <div className="status-cell">
