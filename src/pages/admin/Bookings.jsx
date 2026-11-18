@@ -300,22 +300,24 @@ export default function Bookings() {
       <Modal open={Boolean(viewing)} title={`Booking ${viewing?.id || ''}`} onClose={() => setViewing(null)} size={560}
         footer={
           <>
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={async () => {
-                try {
-                  await updateBooking(viewing.id, { paid: !viewing.paid })
-                  setViewing((v) => ({ ...v, paid: !v.paid }))
-                  toast(viewing.paid ? 'Marked as unpaid' : 'Marked as paid', 'success')
-                } catch (err) {
-                  toast(`Could not update: ${err.message}`, 'error')
-                }
-              }}
-            >
-              {viewing.paid ? 'Mark unpaid' : 'Mark paid'}
-            </button>
-            <button type="button" className="btn btn-outline" onClick={() => openEdit(viewing)}><Pencil size={16} /> Edit</button>
+            {viewing && (
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={async () => {
+                  try {
+                    await updateBooking(viewing.id, { paid: !viewing.paid })
+                    setViewing((v) => ({ ...v, paid: !v.paid }))
+                    toast(viewing.paid ? 'Marked as unpaid' : 'Marked as paid', 'success')
+                  } catch (err) {
+                    toast(`Could not update: ${err.message}`, 'error')
+                  }
+                }}
+              >
+                {viewing.paid ? 'Mark unpaid' : 'Mark paid'}
+              </button>
+            )}
+            <button type="button" className="btn btn-outline" onClick={() => viewing && openEdit(viewing)}><Pencil size={16} /> Edit</button>
             <button type="button" className="btn btn-outline" onClick={() => setViewing(null)}>Close</button>
           </>
         }>
