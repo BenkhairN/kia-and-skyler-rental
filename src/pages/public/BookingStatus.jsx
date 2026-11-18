@@ -128,8 +128,17 @@ export default function BookingStatus() {
             <div className="card card-pad status-card">
               <div className="flex items-center justify-between wrap gap-3">
                 <div>
-                  <span className="eyebrow">{result.customer_name ? `Booking for ${result.customer_name}` : 'Reference'}</span>
-                  <h2 style={{ fontSize: 24, letterSpacing: '0.04em' }}>{result.reference}</h2>
+                  {result.customer_name ? (
+                    <>
+                      <h2 style={{ fontSize: 26 }}>{result.customer_name}</h2>
+                      <span className="muted" style={{ fontSize: 13, letterSpacing: '0.04em' }}>{result.reference}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="eyebrow">Reference</span>
+                      <h2 style={{ fontSize: 24, letterSpacing: '0.04em' }}>{result.reference}</h2>
+                    </>
+                  )}
                 </div>
                 <Badge status={effectiveStatus}>
                   {effectiveStatus === 'active' ? 'Picked up' : effectiveStatus[0].toUpperCase() + effectiveStatus.slice(1)}
