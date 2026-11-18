@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { AlertTriangle, CalendarCheck, CheckCircle2, ChevronLeft, ChevronRight, Copy, Check, Mail, Phone, Search, UserRound, X } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { useToast } from '../../context/ToastContext'
+import { supabase } from '../../lib/supabase'
 import CarImage from '../../components/ui/CarImage'
 import AvailabilityCalendar from '../../components/ui/AvailabilityCalendar'
 import { daysBetween, formatCurrency, formatDate, todayISO } from '../../utils/format'
@@ -21,7 +22,7 @@ const emptyForm = {
 
 export default function Booking() {
   const [params] = useSearchParams()
-  const { cars, bookings, settings, addBooking } = useData()
+  const { cars, ranges, settings } = useData()
   const { toast } = useToast()
   const available = cars.filter((c) => c.status !== 'maintenance')
 
@@ -29,6 +30,7 @@ export default function Booking() {
   const [errors, setErrors] = useState({})
   const [confirmation, setConfirmation] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     const requested = params.get('car')
@@ -41,8 +43,8 @@ export default function Booking() {
   const today = todayISO()
   const car = cars.find((c) => c.id === form.carId)
   const days = daysBetween(form.pickupDate, form.returnDate)
-  const bookedDates = useMemo(() => bookedDateSet(bookings, form.carId), [bookings, form.carId])
-  const conflicts = useMemo(() => findConflicts(bookings, form), [bookings, form])
+  const bookedDates = useMemo(() => bookedDateSet(ranges, form.carId), [ranges, form.carId])
+  const conflicts = useMemo(() => findConflicts(ranges, form), [ranges, form])
   const nextFree = useMemo(() => (form.carId ? nextFreeDate(bookedDates, today) : today), [bookedDates, form.carId, today])
 
   const rate = car ? car.dailyRate : settings.dailyRate
@@ -52,8 +54,8 @@ export default function Booking() {
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
   const chooseCar = (carId) => {
-    const booked = bookedDateSet(bookings, carId)
-    const keepDates = form.pickupDate && form.returnDate && findConflicts(bookings, { ...form, carId }).length === 0
+    const booked = bookedDateSet(ranges, carId)
+    const keepDates = form.pickupDate && form.returnDate && findConflicts(ranges, { ...form, carId }).length === 0
     setForm((f) => ({ ...f, carId, pickupDate: keepDates ? f.pickupDate : '', returnDate: keepDates ? f.returnDate : '' }))
     if (!keepDates && form.pickupDate && booked.size) toast('Those dates are not available for this vehicle. Please pick new dates.', 'info')
   }
@@ -86,17 +88,25 @@ export default function Booking() {
     return Object.keys(next).length === 0
   }
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
-    if (!validate()) return
-    const id = addBooking({
-      ...form,
-      days,
-      dailyRate: rate,
-      deposit: settings.deposit,
-      total: subtotal,
-      status: 'pending',
+    if (!validate() || submitting) return
+    setSubmitting(true)
+    const { data: id, error } = await supabase.rpc('submit_booking', {
+      p_car_id: form.carId,
+      p_customer_name: form.customerName,
+      p_customer_phone: form.customerPhone,
+      p_customer_email: form.customerEmail,
+      p_pickup_location: form.pickupLocation,
+      p_pickup_date: form.pickupDate,
+      p_return_date: form.returnDate,
+      p_notes: form.notes,
     })
+    setSubmitting(false)
+    if (error) {
+      toast(error.message || 'Could not send your booking request. Please try again or call us.', 'error')
+      return
+    }
     setConfirmation({ id, car, days, total: subtotal })
     window.scrollTo({ top: 0, behavior: 'smooth' })
     toast('Booking request sent', 'success')
@@ -346,9 +356,9 @@ export default function Booking() {
               type="submit"
               className="btn btn-gold btn-lg"
               style={{ width: '100%', marginTop: 20 }}
-              disabled={Boolean(car && days > 0 && conflicts.length)}
+              disabled={submitting || Boolean(car && days > 0 && conflicts.length)}
             >
-              Send booking request
+              {submitting ? 'Sending...' : 'Send booking request'}
             </button>
             <Link to="/booking-status" className="btn btn-ghost btn-sm" style={{ width: '100%', marginTop: 10 }}>
               Already booked? Check your status

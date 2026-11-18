@@ -57,9 +57,13 @@ export default function Bookings() {
 
   const counts = bookingStatuses.reduce((acc, s) => ({ ...acc, [s]: bookings.filter((b) => b.status === s).length }), {})
 
-  const changeStatus = (booking, next) => {
-    updateBooking(booking.id, { status: next })
-    toast(`Booking ${booking.id} marked ${next}`, 'success')
+  const changeStatus = async (booking, next) => {
+    try {
+      await updateBooking(booking.id, { status: next })
+      toast(`Booking ${booking.id} marked ${next}`, 'success')
+    } catch (err) {
+      toast(`Could not update: ${err.message}`, 'error')
+    }
   }
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
@@ -68,7 +72,7 @@ export default function Bookings() {
   const formConflicts = findConflicts(bookings, form)
   const conflictsFor = (b) => findConflicts(bookings, b)
 
-  const submitCreate = (e) => {
+  const submitCreate = async (e) => {
     e.preventDefault()
     const next = {}
     if (!form.carId) next.carId = 'Choose a vehicle.'
@@ -77,15 +81,29 @@ export default function Bookings() {
     if (!form.pickupDate || !form.returnDate || formDays < 1) next.returnDate = 'Choose a valid date range.'
     setErrors(next)
     if (Object.keys(next).length) return
-    const id = addBooking({ ...form, days: formDays, total: formDays * (formCar?.dailyRate || 0) })
-    toast(`Booking ${id} created`, 'success')
-    setCreating(false)
-    setForm(emptyForm)
+    try {
+      const id = await addBooking({
+        ...form,
+        days: formDays,
+        dailyRate: formCar?.dailyRate || 0,
+        deposit: 0,
+        total: formDays * (formCar?.dailyRate || 0),
+      })
+      toast(`Booking ${id} created`, 'success')
+      setCreating(false)
+      setForm(emptyForm)
+    } catch (err) {
+      toast(`Could not create booking: ${err.message}`, 'error')
+    }
   }
 
-  const confirmDelete = () => {
-    deleteBooking(deleting.id)
-    toast('Booking deleted', 'success')
+  const confirmDelete = async () => {
+    try {
+      await deleteBooking(deleting.id)
+      toast('Booking deleted', 'success')
+    } catch (err) {
+      toast(`Could not delete: ${err.message}`, 'error')
+    }
     setDeleting(null)
   }
 

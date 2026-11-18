@@ -1,183 +1,232 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { defaultCars } from '../data/cars'
-import { defaultBookings } from '../data/bookings'
 import { defaultSettings } from '../data/site'
-import { defaultTestimonials } from '../data/testimonials'
-import { PREFIX, loadState, saveState, clearState } from '../utils/storage'
+import { supabase } from '../lib/supabase'
+import {
+  bookingFromRow,
+  bookingToRow,
+  carFromRow,
+  carToRow,
+  feedbackFromRow,
+  resolvePhotos,
+} from '../lib/db'
+import { useAuth } from './AuthContext'
 
 const DataContext = createContext(null)
 
-const normalizeSettings = (s) => {
-  const out = { ...s }
-  if (out.email === 'bookings@kiaskylerrentals.com') out.email = defaultSettings.email
-  if (['478-4045', '242-478-4045'].includes(out.phone)) out.phone = defaultSettings.phone
-  return out
-}
-
-
-const nextBookingId = (bookings) => {
-  const max = bookings.reduce((acc, b) => {
-    const n = Number(String(b.id).replace(/\D/g, ''))
-    return Number.isFinite(n) && n > acc ? n : acc
-  }, 1000)
-  return `BK-${max + 1}`
+const stripAccountKeys = (obj) => {
+  const { adminUsername, adminPassword, ...rest } = obj
+  void adminUsername
+  void adminPassword
+  return rest
 }
 
 export function DataProvider({ children }) {
-  const [cars, setCars] = useState(() => loadState('cars', defaultCars))
-  const [bookings, setBookings] = useState(() => loadState('bookings', defaultBookings))
-  const [testimonials, setTestimonials] = useState(() => loadState('testimonials', defaultTestimonials))
-  const [messages, setMessages] = useState(() => loadState('messages', []))
-  const [settings, setSettings] = useState(() =>
-    normalizeSettings({ ...defaultSettings, ...loadState('settings', {}) }),
-  )
+  const { isAdmin } = useAuth()
+  const [cars, setCars] = useState([])
+  const [bookings, setBookings] = useState([])
+  const [ranges, setRanges] = useState([])
+  const [messages, setMessages] = useState([])
+  const [settings, setSettings] = useState(defaultSettings)
+  const [loading, setLoading] = useState(true)
 
-  useEffect(() => saveState('cars', cars), [cars])
-  useEffect(() => saveState('bookings', bookings), [bookings])
-  useEffect(() => saveState('settings', settings), [settings])
-  useEffect(() => saveState('testimonials', testimonials), [testimonials])
-  useEffect(() => saveState('messages', messages), [messages])
+  const fetchCars = useCallback(async () => {
+    const { data } = await supabase.from('cars').select('*').order('created_at')
+    if (data) setCars(data.map(carFromRow))
+  }, [])
+
+  const fetchSettings = useCallback(async () => {
+    const { data } = await supabase.from('site_settings').select('data').eq('id', true).maybeSingle()
+    if (data?.data) setSettings({ ...defaultSettings, ...data.data })
+  }, [])
+
+  const fetchRanges = useCallback(async () => {
+    const { data } = await supabase.rpc('booking_ranges')
+    if (data) {
+      setRanges(
+        data.map((r) => ({
+          id: `rng-${r.car_id}-${r.pickup_date}`,
+          carId: r.car_id,
+          pickupDate: r.pickup_date,
+          returnDate: r.return_date,
+          status: 'confirmed',
+        })),
+      )
+    }
+  }, [])
+
+  const fetchBookings = useCallback(async () => {
+    const { data } = await supabase.from('bookings').select('*').order('created_at', { ascending: false })
+    if (data) setBookings(data.map(bookingFromRow))
+  }, [])
+
+  const fetchFeedback = useCallback(async () => {
+    const { data } = await supabase.from('feedback').select('*').order('created_at', { ascending: false })
+    if (data) setMessages(data.map(feedbackFromRow))
+  }, [])
 
   useEffect(() => {
-    const parse = (raw, fallback) => {
-      try {
-        return raw ? JSON.parse(raw) : fallback
-      } catch {
-        return fallback
-      }
+    let mounted = true
+    Promise.all([fetchCars(), fetchSettings(), fetchRanges()]).finally(() => {
+      if (mounted) setLoading(false)
+    })
+    return () => {
+      mounted = false
     }
+  }, [fetchCars, fetchSettings, fetchRanges])
 
-    const onStorage = (e) => {
-      if (e.storageArea !== window.localStorage) return
-      if (e.key === null) {
-        setCars(defaultCars)
-        setBookings(defaultBookings)
-        setSettings(defaultSettings)
-        setTestimonials(defaultTestimonials)
-        setMessages([])
-        return
-      }
-      if (e.key === `${PREFIX}cars`) setCars(parse(e.newValue, defaultCars))
-      if (e.key === `${PREFIX}testimonials`) setTestimonials(parse(e.newValue, defaultTestimonials))
-      if (e.key === `${PREFIX}messages`) {
-        const next = parse(e.newValue, [])
-        const known = new Set(parse(e.oldValue, []).map((m) => m.id))
-        const added = next.filter((m) => !known.has(m.id))
-        setMessages(next)
-        if (added.length && e.oldValue) {
-          window.dispatchEvent(new CustomEvent('ksr:new-messages', { detail: added }))
-        }
-      }
-      if (e.key === `${PREFIX}settings`) setSettings(normalizeSettings({ ...defaultSettings, ...parse(e.newValue, {}) }))
-      if (e.key === `${PREFIX}bookings`) {
-        const next = parse(e.newValue, defaultBookings)
-        const known = new Set(parse(e.oldValue, []).map((b) => b.id))
-        const added = next.filter((b) => !known.has(b.id))
-        setBookings(next)
-        if (added.length && e.oldValue) {
-          window.dispatchEvent(new CustomEvent('ksr:new-bookings', { detail: added }))
-        }
-      }
+  useEffect(() => {
+    if (isAdmin) {
+      fetchBookings()
+      fetchFeedback()
+    } else {
+      setBookings([])
+      setMessages([])
     }
+  }, [isAdmin, fetchBookings, fetchFeedback])
 
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
+  useEffect(() => {
+    const notify = (event, rows) => {
+      if (rows.length) window.dispatchEvent(new CustomEvent(event, { detail: rows }))
+    }
+    const channel = supabase
+      .channel('ksr-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cars' }, fetchCars)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'site_settings' }, fetchSettings)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, (payload) => {
+        fetchRanges()
+        if (isAdmin) {
+          fetchBookings()
+          if (payload.eventType === 'INSERT') notify('ksr:new-bookings', [bookingFromRow(payload.new)])
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'feedback' }, (payload) => {
+        if (isAdmin) {
+          fetchFeedback()
+          if (payload.eventType === 'INSERT') notify('ksr:new-messages', [feedbackFromRow(payload.new)])
+        }
+      })
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [isAdmin, fetchCars, fetchSettings, fetchRanges, fetchBookings, fetchFeedback])
+
+  const addCar = useCallback(async (car) => {
+    const photos = await resolvePhotos([car.image, ...(car.gallery || [])].filter(Boolean), 'cars')
+    const row = { ...carToRow(car), image: photos[0] || '', gallery: photos.slice(1) }
+    const { data, error } = await supabase.from('cars').insert(row).select().single()
+    if (error) throw new Error(error.message)
+    const created = carFromRow(data)
+    setCars((prev) => [...prev, created])
+    return created.id
   }, [])
 
-  const addCar = useCallback((car) => {
-    const id = `car-${Date.now()}`
-    setCars((prev) => [{ ...car, id }, ...prev])
-    return id
+  const updateCar = useCallback(async (id, patch) => {
+    let applied = patch
+    const row = {}
+    Object.entries(patch).forEach(([k, v]) => {
+      row[k === 'dailyRate' ? 'daily_rate' : k.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`)] = v
+    })
+    if (patch.image !== undefined || patch.gallery !== undefined) {
+      const photos = await resolvePhotos([patch.image, ...(patch.gallery || [])].filter(Boolean), 'cars')
+      row.image = photos[0] || ''
+      row.gallery = photos.slice(1)
+      applied = { ...patch, image: row.image, gallery: row.gallery }
+    }
+    const { error } = await supabase.from('cars').update(row).eq('id', id)
+    if (error) throw new Error(error.message)
+    setCars((prev) => prev.map((c) => (c.id === id ? { ...c, ...applied } : c)))
   }, [])
 
-  const updateCar = useCallback((id, patch) => {
-    setCars((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)))
-  }, [])
-
-  const deleteCar = useCallback((id) => {
+  const deleteCar = useCallback(async (id) => {
+    const { error } = await supabase.from('cars').delete().eq('id', id)
+    if (error) throw new Error(error.message)
     setCars((prev) => prev.filter((c) => c.id !== id))
   }, [])
 
-  const addBooking = useCallback((booking) => {
-    let id = ''
-    setBookings((prev) => {
-      id = nextBookingId(prev)
-      return [
-        {
-          ...booking,
-          id,
-          status: booking.status || 'pending',
-          createdAt: new Date().toISOString().slice(0, 10),
-        },
-        ...prev,
-      ]
+  const addBooking = useCallback(async (booking) => {
+    const { data, error } = await supabase.from('bookings').insert(bookingToRow(booking)).select().single()
+    if (error) throw new Error(error.message)
+    const created = bookingFromRow(data)
+    setBookings((prev) => [created, ...prev])
+    fetchRanges()
+    return created.id
+  }, [fetchRanges])
+
+  const updateBooking = useCallback(async (id, patch) => {
+    const map = {
+      status: 'status',
+      notes: 'notes',
+      customerName: 'customer_name',
+      customerPhone: 'customer_phone',
+      customerEmail: 'customer_email',
+      pickupLocation: 'pickup_location',
+      pickupDate: 'pickup_date',
+      returnDate: 'return_date',
+      total: 'total',
+      deposit: 'deposit',
+    }
+    const row = {}
+    Object.entries(patch).forEach(([k, v]) => {
+      if (map[k]) row[map[k]] = v
     })
-    return id
-  }, [])
-
-  const updateBooking = useCallback((id, patch) => {
+    const { error } = await supabase.from('bookings').update(row).eq('reference', id)
+    if (error) throw new Error(error.message)
     setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, ...patch } : b)))
-  }, [])
+    fetchRanges()
+  }, [fetchRanges])
 
-  const deleteBooking = useCallback((id) => {
+  const deleteBooking = useCallback(async (id) => {
+    const { error } = await supabase.from('bookings').delete().eq('reference', id)
+    if (error) throw new Error(error.message)
     setBookings((prev) => prev.filter((b) => b.id !== id))
+    fetchRanges()
+  }, [fetchRanges])
+
+  const updateSettings = useCallback(async (patch) => {
+    const clean = stripAccountKeys(patch)
+    setSettings((prev) => {
+      const next = { ...prev, ...clean }
+      supabase
+        .from('site_settings')
+        .upsert({ id: true, data: stripAccountKeys(next), updated_at: new Date().toISOString() })
+        .then(({ error }) => {
+          if (error) window.dispatchEvent(new CustomEvent('ksr:save-error', { detail: error.message }))
+        })
+      return next
+    })
   }, [])
 
-  const updateSettings = useCallback((patch) => {
-    setSettings((prev) => ({ ...prev, ...patch }))
+  const addMessage = useCallback(async (m) => {
+    const { data, error } = await supabase
+      .from('feedback')
+      .insert({ name: m.name || 'Website visitor', message: m.message, rating: m.rating || 0 })
+      .select()
+      .single()
+    if (error) throw new Error(error.message)
+    return data.id
   }, [])
 
-  const addTestimonial = useCallback((t) => {
-    const id = `rev-${Date.now()}`
-    setTestimonials((prev) => [{ ...t, id }, ...prev])
-    return id
+  const updateMessage = useCallback(async (id, patch) => {
+    const row = {}
+    if (patch.read !== undefined) row.read = patch.read
+    const { error } = await supabase.from('feedback').update(row).eq('id', id)
+    if (!error) setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)))
   }, [])
 
-  const updateTestimonial = useCallback((id, patch) => {
-    setTestimonials((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
-  }, [])
-
-  const deleteTestimonial = useCallback((id) => {
-    setTestimonials((prev) => prev.filter((t) => t.id !== id))
-  }, [])
-
-  const addMessage = useCallback((m) => {
-    const id = `msg-${Date.now()}`
-    setMessages((prev) => [
-      { ...m, id, read: false, createdAt: new Date().toISOString() },
-      ...prev,
-    ])
-    return id
-  }, [])
-
-  const updateMessage = useCallback((id, patch) => {
-    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)))
-  }, [])
-
-  const deleteMessage = useCallback((id) => {
-    setMessages((prev) => prev.filter((m) => m.id !== id))
-  }, [])
-
-  const resetData = useCallback(() => {
-    clearState('cars')
-    clearState('bookings')
-    clearState('settings')
-    clearState('testimonials')
-    clearState('messages')
-    setCars(defaultCars)
-    setBookings(defaultBookings)
-    setSettings(defaultSettings)
-    setTestimonials(defaultTestimonials)
-    setMessages([])
+  const deleteMessage = useCallback(async (id) => {
+    const { error } = await supabase.from('feedback').delete().eq('id', id)
+    if (!error) setMessages((prev) => prev.filter((m) => m.id !== id))
   }, [])
 
   const value = useMemo(
     () => ({
       cars,
       bookings,
-      testimonials,
+      ranges,
       messages,
       settings,
+      loading,
       getCar: (id) => cars.find((c) => c.id === id),
       addCar,
       updateCar,
@@ -186,17 +235,11 @@ export function DataProvider({ children }) {
       updateBooking,
       deleteBooking,
       updateSettings,
-      addTestimonial,
-      updateTestimonial,
-      deleteTestimonial,
       addMessage,
       updateMessage,
       deleteMessage,
-      resetData,
     }),
-    [cars, bookings, testimonials, messages, settings, addCar, updateCar, deleteCar, addBooking, updateBooking, deleteBooking,
-      updateSettings, addTestimonial, updateTestimonial, deleteTestimonial, addMessage, updateMessage,
-      deleteMessage, resetData],
+    [cars, bookings, ranges, messages, settings, loading, addCar, updateCar, deleteCar, addBooking, updateBooking, deleteBooking, updateSettings, addMessage, updateMessage, deleteMessage],
   )
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>

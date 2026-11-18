@@ -13,8 +13,6 @@ export const defaultSettings = {
   minAge: 25,
   heroImage: '',
   aboutImage: '',
-  adminUsername: 'admin',
-  adminPassword: 'admin123',
 }
 
 export const pickupLocations = [

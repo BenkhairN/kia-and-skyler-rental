@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Car, CheckCircle2, Clock, Hash, KeyRound, MapPin, Phone, Search, Undo2, XCircle } from 'lucide-react'
 import { useData } from '../../context/DataContext'
+import { supabase } from '../../lib/supabase'
 import Badge from '../../components/ui/Badge'
 import CarImage from '../../components/ui/CarImage'
-import { formatCurrency, formatDate, todayISO } from '../../utils/format'
-import { phonesMatch } from '../../utils/availability'
+import { daysBetween, formatCurrency, formatDate, todayISO } from '../../utils/format'
 
 const steps = [
   { key: 'pending', label: 'Request received', icon: Clock, text: 'We have your request and will confirm shortly.' },
@@ -18,34 +18,40 @@ const stepIndex = (status) => steps.findIndex((s) => s.key === status)
 
 export default function BookingStatus() {
   const [params] = useSearchParams()
-  const { bookings, cars, settings } = useData()
+  const { settings } = useData()
   const [ref, setRef] = useState(params.get('ref') || '')
   const [phone, setPhone] = useState('')
-  const [resultId, setResultId] = useState(null)
+  const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  const lookup = (e) => {
+  const lookup = async (e) => {
     e.preventDefault()
-    const code = ref.trim().toUpperCase()
+    const code = ref.trim()
     if (!code || !phone.trim()) {
       setError('Enter your booking reference and the phone number you booked with.')
-      setResultId(null)
+      setResult(null)
       return
     }
-    const match = bookings.find((b) => String(b.id).toUpperCase() === code && phonesMatch(b.customerPhone, phone))
+    setBusy(true)
+    const { data, error: rpcError } = await supabase.rpc('lookup_booking', {
+      p_reference: code,
+      p_phone: phone,
+    })
+    setBusy(false)
+    const match = !rpcError && data?.length ? data[0] : null
     if (!match) {
       setError('We could not find a booking with that reference and phone number. Check the details or call us.')
-      setResultId(null)
+      setResult(null)
       return
     }
     setError('')
-    setResultId(match.id)
+    setResult(match)
   }
 
-  const result = resultId ? bookings.find((b) => b.id === resultId) || null : null
-  const car = result ? cars.find((c) => c.id === result.carId) : null
+  const days = result ? daysBetween(result.pickup_date, result.return_date) : 0
   const effectiveStatus =
-    result?.status === 'confirmed' && result.pickupDate <= todayISO() && result.returnDate >= todayISO()
+    result?.status === 'confirmed' && result.pickup_date <= todayISO() && result.return_date >= todayISO()
       ? 'active'
       : result?.status
   const cancelled = result?.status === 'cancelled'
@@ -69,7 +75,7 @@ export default function BookingStatus() {
                 <label htmlFor="ref">Booking reference</label>
                 <div className="input-icon">
                   <Hash size={16} />
-                  <input id="ref" className="input" placeholder="BK-1007" value={ref} onChange={(e) => setRef(e.target.value)} autoCapitalize="characters" />
+                  <input id="ref" className="input" placeholder="BK-AB12CD34EF56" value={ref} onChange={(e) => setRef(e.target.value)} autoCapitalize="characters" />
                 </div>
               </div>
               <div className="field span-2">
@@ -80,9 +86,9 @@ export default function BookingStatus() {
                 </div>
               </div>
               {error && <span className="form-error span-2">{error}</span>}
-              <button type="submit" className="btn btn-gold span-2">
+              <button type="submit" className="btn btn-gold span-2" disabled={busy}>
                 <Search size={16} />
-                Find my booking
+                {busy ? 'Searching...' : 'Find my booking'}
               </button>
             </div>
             <p className="form-help mt-4">
@@ -95,7 +101,7 @@ export default function BookingStatus() {
               <div className="flex items-center justify-between wrap gap-3">
                 <div>
                   <span className="eyebrow">Reference</span>
-                  <h2 style={{ fontSize: 24, letterSpacing: '0.04em' }}>{result.id}</h2>
+                  <h2 style={{ fontSize: 24, letterSpacing: '0.04em' }}>{result.reference}</h2>
                 </div>
                 <Badge status={effectiveStatus}>
                   {effectiveStatus === 'active' ? 'Picked up' : effectiveStatus[0].toUpperCase() + effectiveStatus.slice(1)}
@@ -103,10 +109,10 @@ export default function BookingStatus() {
               </div>
 
               <div className="summary-car mt-4">
-                <CarImage src={car?.image} alt={car?.name || 'Vehicle'} />
+                <CarImage src={result.car_image} alt={result.car_name || 'Vehicle'} />
                 <div>
-                  <strong>{car ? `${car.year} ${car.name}` : 'Vehicle'}</strong>
-                  <p className="muted small">{car ? `${car.color} · ${car.category}` : 'Details available by phone'}</p>
+                  <strong>{result.car_year} {result.car_name}</strong>
+                  <p className="muted small">{result.car_color} · {result.car_category}</p>
                 </div>
               </div>
 
@@ -134,8 +140,8 @@ export default function BookingStatus() {
               )}
 
               <ul className="info-list">
-                <li><CalendarDays size={18} /> {formatDate(result.pickupDate)} to {formatDate(result.returnDate)} ({result.days} {result.days === 1 ? 'day' : 'days'})</li>
-                <li><MapPin size={18} /> {result.pickupLocation}</li>
+                <li><CalendarDays size={18} /> {formatDate(result.pickup_date)} to {formatDate(result.return_date)} ({days} {days === 1 ? 'day' : 'days'})</li>
+                {result.pickup_location && <li><MapPin size={18} /> {result.pickup_location}</li>}
                 <li><Car size={18} /> {formatCurrency(result.total)} rental + {formatCurrency(result.deposit ?? settings.deposit)} refundable deposit</li>
               </ul>
 

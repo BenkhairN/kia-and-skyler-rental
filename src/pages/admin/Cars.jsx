@@ -8,7 +8,6 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import CarImage from '../../components/ui/CarImage'
 import EmptyState from '../../components/ui/EmptyState'
 import PhotoManager from '../../components/ui/PhotoManager'
-import { fitsInStorage } from '../../utils/image'
 import { carDisplayStatus, formatCurrency } from '../../utils/format'
 
 const emptyCar = {
@@ -39,6 +38,7 @@ export default function Cars() {
   const [featuresText, setFeaturesText] = useState('')
   const [photos, setPhotos] = useState([])
   const [errors, setErrors] = useState({})
+  const [saving, setSaving] = useState(false)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -68,14 +68,14 @@ export default function Cars() {
   const close = () => setEditing(null)
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
-  const save = (e) => {
+  const save = async (e) => {
     e.preventDefault()
     const next = {}
     if (!form.name.trim()) next.name = 'Model name is required.'
     if (!form.plate.trim()) next.plate = 'License plate is required.'
     if (Number(form.dailyRate) <= 0) next.dailyRate = 'Enter a daily rate.'
     setErrors(next)
-    if (Object.keys(next).length) return
+    if (Object.keys(next).length || saving) return
 
     const payload = {
       ...form,
@@ -87,25 +87,30 @@ export default function Cars() {
       gallery: photos.slice(1),
     }
 
-    const nextCars = editing === 'new' ? [payload, ...cars] : cars.map((c) => (c.id === editing ? { ...c, ...payload } : c))
-    if (!fitsInStorage(JSON.stringify(cars), JSON.stringify(nextCars))) {
-      toast('Not enough browser storage for these photos. Remove a few photos or use smaller images.', 'error')
-      return
+    setSaving(true)
+    try {
+      if (editing === 'new') {
+        await addCar(payload)
+        toast('Vehicle added', 'success')
+      } else {
+        await updateCar(editing, payload)
+        toast('Vehicle updated', 'success')
+      }
+      close()
+    } catch (err) {
+      toast(err.message?.includes('plate') ? 'A vehicle with that license plate already exists.' : `Could not save: ${err.message}`, 'error')
+    } finally {
+      setSaving(false)
     }
-
-    if (editing === 'new') {
-      addCar(payload)
-      toast('Vehicle added', 'success')
-    } else {
-      updateCar(editing, payload)
-      toast('Vehicle updated', 'success')
-    }
-    close()
   }
 
-  const confirmDelete = () => {
-    deleteCar(deleting.id)
-    toast('Vehicle removed', 'success')
+  const confirmDelete = async () => {
+    try {
+      await deleteCar(deleting.id)
+      toast('Vehicle removed', 'success')
+    } catch (err) {
+      toast(`Could not remove: ${err.message}`, 'error')
+    }
     setDeleting(null)
   }
 
@@ -189,7 +194,7 @@ export default function Cars() {
                         <input
                           type="checkbox"
                           checked={car.status !== 'maintenance'}
-                          onChange={(e) => updateCar(car.id, { status: e.target.checked ? 'available' : 'maintenance' })}
+                          onChange={(e) => updateCar(car.id, { status: e.target.checked ? 'available' : 'maintenance' }).catch((err) => toast(`Could not update: ${err.message}`, 'error'))}
                           aria-label="Toggle availability"
                         />
                         <span className="status-toggle-track"><span className="status-toggle-thumb" /></span>
@@ -218,7 +223,7 @@ export default function Cars() {
         footer={
           <>
             <button type="button" className="btn btn-ghost" onClick={close}>Cancel</button>
-            <button type="submit" form="car-form" className="btn btn-gold">{editing === 'new' ? 'Add vehicle' : 'Save changes'}</button>
+            <button type="submit" form="car-form" className="btn btn-gold" disabled={saving}>{saving ? 'Saving...' : editing === 'new' ? 'Add vehicle' : 'Save changes'}</button>
           </>
         }
       >

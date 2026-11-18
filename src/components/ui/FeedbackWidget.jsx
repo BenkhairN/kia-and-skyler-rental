@@ -11,20 +11,22 @@ export default function FeedbackWidget() {
   const [name, setName] = useState('')
   const [message, setMessage] = useState('')
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
     if (!message.trim()) {
       toast('Please write a short message', 'error')
       return
     }
-    addMessage({
-      kind: 'feedback',
-      name: name.trim() || 'Website visitor',
-      email: '',
-      phone: '',
-      rating,
-      message: message.trim(),
-    })
+    try {
+      await addMessage({
+        name: name.trim() || 'Website visitor',
+        rating,
+        message: message.trim(),
+      })
+    } catch {
+      toast('Could not send feedback. Please try again.', 'error')
+      return
+    }
     toast('Thanks for your feedback!', 'success')
     setOpen(false)
     setRating(0)

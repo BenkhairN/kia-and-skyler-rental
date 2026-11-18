@@ -1,44 +1,86 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { PREFIX, loadState, saveState, clearState } from '../utils/storage'
-import { useData } from './DataContext'
+import { supabase, supabaseConfigured } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const { settings } = useData()
-  const [session, setSession] = useState(() => loadState('session', null))
+  const [session, setSession] = useState(undefined)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key === null || e.key === `${PREFIX}session`) setSession(loadState('session', null))
+    if (!supabaseConfigured) {
+      setSession(null)
+      return undefined
     }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
+    let mounted = true
+
+    const apply = async (sess) => {
+      if (!sess?.user) {
+        if (mounted) {
+          setSession(null)
+          setIsAdmin(false)
+        }
+        return
+      }
+      const { data } = await supabase
+        .from('admin_users')
+        .select('user_id')
+        .eq('user_id', sess.user.id)
+        .maybeSingle()
+      if (!mounted) return
+      if (data) {
+        setSession(sess)
+        setIsAdmin(true)
+      } else {
+        setSession(null)
+        setIsAdmin(false)
+        await supabase.auth.signOut()
+      }
+    }
+
+    supabase.auth.getSession().then(({ data }) => apply(data.session))
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, sess) => apply(sess))
+
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
-  const login = useCallback(
-    (username, password) => {
-      const ok =
-        username.trim().toLowerCase() === settings.adminUsername.toLowerCase() &&
-        password === settings.adminPassword
-      if (ok) {
-        const next = { username: settings.adminUsername, loginAt: Date.now() }
-        saveState('session', next)
-        setSession(next)
-      }
-      return ok
-    },
-    [settings.adminUsername, settings.adminPassword],
-  )
+  const login = useCallback(async (email, password) => {
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+    if (error) return { ok: false, message: 'Incorrect email or password.' }
 
-  const logout = useCallback(() => {
-    clearState('session')
-    setSession(null)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    const { data } = await supabase
+      .from('admin_users')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (!data) {
+      await supabase.auth.signOut()
+      return { ok: false, message: 'This account is not an administrator.' }
+    }
+    return { ok: true }
+  }, [])
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut()
   }, [])
 
   const value = useMemo(
-    () => ({ isAuthenticated: Boolean(session), user: session, login, logout }),
-    [session, login, logout],
+    () => ({
+      isAuthenticated: Boolean(session && isAdmin),
+      loading: session === undefined,
+      user: session?.user || null,
+      login,
+      logout,
+    }),
+    [session, isAdmin, login, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

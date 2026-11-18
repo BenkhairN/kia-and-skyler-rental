@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowLeft, CalendarCheck, CarFront, Eye, EyeOff, LockKeyhole, UserRound, Users } from 'lucide-react'
+import { ArrowLeft, CalendarCheck, CarFront, Eye, EyeOff, LockKeyhole, Mail, Users } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { useToast } from '../../context/ToastContext'
 import Logo from '../../components/ui/Logo'
@@ -12,20 +12,25 @@ export default function Login() {
   const { toast } = useToast()
   const navigate = useNavigate()
   const location = useLocation()
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [show, setShow] = useState(false)
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
   if (isAuthenticated) return <Navigate to="/admin" replace />
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
-    if (login(username, password)) {
+    setBusy(true)
+    setError('')
+    const result = await login(email, password)
+    setBusy(false)
+    if (result.ok) {
       toast('Welcome back', 'success')
       navigate(location.state?.from || '/admin', { replace: true })
     } else {
-      setError('Incorrect username or password.')
+      setError(result.message)
     }
   }
 
@@ -58,16 +63,17 @@ export default function Login() {
 
           <form className="login-form" onSubmit={submit}>
             <div className="field">
-              <label htmlFor="username">Username</label>
+              <label htmlFor="email">Email</label>
               <div className="input-icon">
-                <UserRound size={16} />
+                <Mail size={16} />
                 <input
-                  id="username"
+                  id="email"
                   className="input"
+                  type="email"
                   autoComplete="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
                 />
               </div>
             </div>
@@ -90,12 +96,10 @@ export default function Login() {
               </div>
             </div>
             {error && <span className="form-error">{error}</span>}
-            <button type="submit" className="btn btn-gold btn-lg">Sign in</button>
+            <button type="submit" className="btn btn-gold btn-lg" disabled={busy}>
+              {busy ? 'Signing in...' : 'Sign in'}
+            </button>
           </form>
-
-          <div className="login-hint">
-            Default credentials: <code>admin</code> / <code>admin123</code>. Change them under Settings after signing in.
-          </div>
         </div>
       </div>
     </div>

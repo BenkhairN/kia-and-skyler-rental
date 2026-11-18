@@ -17,7 +17,7 @@ const titles = {
 }
 
 export default function AdminLayout() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, loading } = useAuth()
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
   const { toast } = useToast()
@@ -37,6 +37,8 @@ export default function AdminLayout() {
       window.removeEventListener('ksr:new-messages', onNewMessage)
     }
   }, [toast])
+
+  if (loading) return null
 
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace state={{ from: pathname }} />

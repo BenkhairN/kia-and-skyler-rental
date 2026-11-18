@@ -27,8 +27,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <DataProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <DataProvider>
             <ToastProvider>
               <Routes>
                 <Route element={<PublicLayout />}>
@@ -58,8 +58,8 @@ export default function App() {
                 </Route>
               </Routes>
             </ToastProvider>
-          </AuthProvider>
-        </DataProvider>
+          </DataProvider>
+        </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
   )
