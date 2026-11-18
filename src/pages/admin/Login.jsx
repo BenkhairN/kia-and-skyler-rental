@@ -63,17 +63,16 @@ export default function Login() {
 
           <form className="login-form" onSubmit={submit}>
             <div className="field">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="email">Username or email</label>
               <div className="input-icon">
                 <Mail size={16} />
                 <input
                   id="email"
                   className="input"
-                  type="email"
                   autoComplete="username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder="admin"
                 />
               </div>
             </div>

@@ -50,7 +50,9 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = useCallback(async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+    const raw = email.trim().toLowerCase()
+    const normalized = raw.includes('@') ? raw : `${raw}@kiaskylerrentals.com`
+    const { error } = await supabase.auth.signInWithPassword({ email: normalized, password })
     if (error) return { ok: false, message: 'Incorrect email or password.' }
 
     const {
