@@ -21,7 +21,7 @@ const stripAccountKeys = (obj) => {
 }
 
 export function DataProvider({ children }) {
-  const { isAdmin } = useAuth()
+  const { user } = useAuth()
   const [cars, setCars] = useState([])
   const [bookings, setBookings] = useState([])
   const [ranges, setRanges] = useState([])
@@ -55,12 +55,14 @@ export function DataProvider({ children }) {
   }, [])
 
   const fetchBookings = useCallback(async () => {
-    const { data } = await supabase.from('bookings').select('*').order('created_at', { ascending: false })
+    const { data, error } = await supabase.from('bookings').select('*').order('created_at', { ascending: false })
+    if (error) console.error('fetchBookings failed:', error.message)
     if (data) setBookings(data.map(bookingFromRow))
   }, [])
 
   const fetchFeedback = useCallback(async () => {
-    const { data } = await supabase.from('feedback').select('*').order('created_at', { ascending: false })
+    const { data, error } = await supabase.from('feedback').select('*').order('created_at', { ascending: false })
+    if (error) console.error('fetchFeedback failed:', error.message)
     if (data) setMessages(data.map(feedbackFromRow))
   }, [])
 
@@ -75,14 +77,14 @@ export function DataProvider({ children }) {
   }, [fetchCars, fetchSettings, fetchRanges])
 
   useEffect(() => {
-    if (isAdmin) {
+    if (user) {
       fetchBookings()
       fetchFeedback()
     } else {
       setBookings([])
       setMessages([])
     }
-  }, [isAdmin, fetchBookings, fetchFeedback])
+  }, [user, fetchBookings, fetchFeedback])
 
   useEffect(() => {
     const notify = (event, rows) => {
@@ -94,13 +96,13 @@ export function DataProvider({ children }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'site_settings' }, fetchSettings)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, (payload) => {
         fetchRanges()
-        if (isAdmin) {
+        if (user) {
           fetchBookings()
           if (payload.eventType === 'INSERT') notify('ksr:new-bookings', [bookingFromRow(payload.new)])
         }
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'feedback' }, (payload) => {
-        if (isAdmin) {
+        if (user) {
           fetchFeedback()
           if (payload.eventType === 'INSERT') notify('ksr:new-messages', [feedbackFromRow(payload.new)])
         }
@@ -109,7 +111,7 @@ export function DataProvider({ children }) {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [isAdmin, fetchCars, fetchSettings, fetchRanges, fetchBookings, fetchFeedback])
+  }, [user, fetchCars, fetchSettings, fetchRanges, fetchBookings, fetchFeedback])
 
   const addCar = useCallback(async (car) => {
     const photos = await resolvePhotos([car.image, ...(car.gallery || [])].filter(Boolean), 'cars')
