@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Car, CheckCircle2, Clock, Hash, KeyRound, MapPin, Phone, Search, Undo2, XCircle } from 'lucide-react'
 import { useData } from '../../context/DataContext'
@@ -24,6 +24,31 @@ export default function BookingStatus() {
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [credentials, setCredentials] = useState(null)
+
+  const refresh = useCallback(async (creds) => {
+    const { data, error: rpcError } = await supabase.rpc('lookup_booking', {
+      p_reference: creds.ref,
+      p_phone: creds.phone,
+    })
+    if (!rpcError && data?.length) setResult(data[0])
+  }, [])
+
+  useEffect(() => {
+    if (!credentials) return undefined
+    const tick = () => refresh(credentials)
+    const interval = setInterval(tick, 15000)
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') tick()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', tick)
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', tick)
+    }
+  }, [credentials, refresh])
 
   const lookup = async (e) => {
     e.preventDefault()
@@ -31,6 +56,7 @@ export default function BookingStatus() {
     if (!code || !phone.trim()) {
       setError('Enter your booking reference and the phone number you booked with.')
       setResult(null)
+      setCredentials(null)
       return
     }
     setBusy(true)
@@ -43,10 +69,12 @@ export default function BookingStatus() {
     if (!match) {
       setError('We could not find a booking with that reference and phone number. Check the details or call us.')
       setResult(null)
+      setCredentials(null)
       return
     }
     setError('')
     setResult(match)
+    setCredentials({ ref: code, phone })
   }
 
   const days = result ? daysBetween(result.pickup_date, result.return_date) : 0
