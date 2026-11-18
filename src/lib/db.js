@@ -51,6 +51,7 @@ export const bookingFromRow = (r) => ({
   deposit: Number(r.deposit),
   total: Number(r.total),
   status: r.status,
+  paid: Boolean(r.paid),
   notes: r.notes,
   createdAt: r.created_at,
 })

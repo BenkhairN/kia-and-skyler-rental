@@ -300,6 +300,21 @@ export default function Bookings() {
       <Modal open={Boolean(viewing)} title={`Booking ${viewing?.id || ''}`} onClose={() => setViewing(null)} size={560}
         footer={
           <>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={async () => {
+                try {
+                  await updateBooking(viewing.id, { paid: !viewing.paid })
+                  setViewing((v) => ({ ...v, paid: !v.paid }))
+                  toast(viewing.paid ? 'Marked as unpaid' : 'Marked as paid', 'success')
+                } catch (err) {
+                  toast(`Could not update: ${err.message}`, 'error')
+                }
+              }}
+            >
+              {viewing.paid ? 'Mark unpaid' : 'Mark paid'}
+            </button>
             <button type="button" className="btn btn-outline" onClick={() => openEdit(viewing)}><Pencil size={16} /> Edit</button>
             <button type="button" className="btn btn-outline" onClick={() => setViewing(null)}>Close</button>
           </>
@@ -319,6 +334,7 @@ export default function Bookings() {
             <div className="span-2"><span>Pick-up location</span><strong>{viewing.pickupLocation}</strong></div>
             <div><span>Duration</span><strong>{viewing.days} {viewing.days === 1 ? 'day' : 'days'}</strong></div>
             <div><span>Total</span><strong className="gold-text">{formatCurrency(viewing.total)}</strong></div>
+            <div><span>Payment</span><strong style={{ color: viewing.paid ? 'var(--green-400, #5bc27d)' : 'var(--text-muted)' }}>{viewing.paid ? 'Paid' : 'Unpaid'}</strong></div>
             <div className="span-2"><span>Notes</span><strong style={{ fontWeight: 400 }} className="muted">{viewing.notes || 'No notes'}</strong></div>
             <div><span>Requested on</span><strong>{formatDate(viewing.createdAt)}</strong></div>
             {conflictsFor(viewing).length > 0 && (

@@ -11,6 +11,11 @@ export const defaultSettings = {
   dailyRate: 70,
   deposit: 100,
   minAge: 25,
+  bankName: 'Scotiabank',
+  bankAccountName: 'RAKIYA POITIER',
+  bankAccountType: 'Savings',
+  bankAccountNumber: '80515 004031200',
+  bankCurrency: 'BSD',
   heroImage: '',
   aboutImage: '',
 }

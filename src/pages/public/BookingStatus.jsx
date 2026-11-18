@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { CalendarDays, Car, CheckCircle2, Clock, Hash, KeyRound, MapPin, Phone, Search, Undo2, UserRound, XCircle } from 'lucide-react'
+import { CalendarDays, Car, CheckCircle2, Clock, Hash, KeyRound, Landmark, MapPin, Phone, Search, Undo2, UserRound, XCircle } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { supabase } from '../../lib/supabase'
 import Badge from '../../components/ui/Badge'
@@ -182,6 +182,32 @@ export default function BookingStatus() {
                 {result.pickup_location && <li><MapPin size={18} /> {result.pickup_location}</li>}
                 <li><Car size={18} /> {formatCurrency(result.total)} rental + {formatCurrency(result.deposit ?? settings.deposit)} refundable deposit</li>
               </ul>
+
+              {!cancelled && effectiveStatus !== 'pending' && (
+                <div className="pay-card mt-4">
+                  <div className="pay-head">
+                    <Landmark size={18} />
+                    <strong>Payment</strong>
+                    {result.paid && <span className="badge badge-success">Received</span>}
+                  </div>
+                  {result.paid ? (
+                    <p className="muted small">We have received your payment. Thank you!</p>
+                  ) : (
+                    <>
+                      <p className="muted small">
+                        Please transfer <strong>{formatCurrency((result.total || 0) + (result.deposit ?? settings.deposit))} {settings.bankCurrency}</strong> to:
+                      </p>
+                      <ul className="pay-details">
+                        <li><span>Bank</span><strong>{settings.bankName}</strong></li>
+                        <li><span>Account name</span><strong>{settings.bankAccountName}</strong></li>
+                        <li><span>Account type</span><strong>{settings.bankAccountType}</strong></li>
+                        <li><span>Account number</span><strong>{settings.bankAccountNumber}</strong></li>
+                      </ul>
+                      <p className="muted small">Send your receipt on WhatsApp so we can mark your booking as paid.</p>
+                    </>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-3 wrap mt-6">
                 <a href={settings.phoneHref} className="btn btn-gold">

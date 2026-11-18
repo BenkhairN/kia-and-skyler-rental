@@ -22,6 +22,11 @@ export default function Settings() {
     email: settings.email,
     address: settings.address,
     hours: settings.hours,
+    bankName: settings.bankName,
+    bankAccountName: settings.bankAccountName,
+    bankAccountType: settings.bankAccountType,
+    bankAccountNumber: settings.bankAccountNumber,
+    bankCurrency: settings.bankCurrency,
     heroImage: settings.heroImage,
     aboutImage: settings.aboutImage,
   })
@@ -102,6 +107,11 @@ export default function Settings() {
             <div className="field span-2"><label>Email</label><input className="input" type="email" value={business.email} onChange={setB('email')} /></div>
             <div className="field span-2"><label>Address</label><input className="input" value={business.address} onChange={setB('address')} /></div>
             <div className="field span-2"><label>Hours</label><input className="input" value={business.hours} onChange={setB('hours')} /></div>
+            <div className="field"><label>Bank name</label><input className="input" value={business.bankName || ''} onChange={setB('bankName')} /></div>
+            <div className="field"><label>Account name</label><input className="input" value={business.bankAccountName || ''} onChange={setB('bankAccountName')} /></div>
+            <div className="field"><label>Account type</label><input className="input" value={business.bankAccountType || ''} onChange={setB('bankAccountType')} /></div>
+            <div className="field"><label>Account number</label><input className="input" value={business.bankAccountNumber || ''} onChange={setB('bankAccountNumber')} /></div>
+            <div className="field"><label>Account currency</label><input className="input" value={business.bankCurrency || ''} onChange={setB('bankCurrency')} /></div>
           </div>
           <button type="submit" className="btn btn-gold mt-6"><Save size={16} /> Save details</button>
         </form>

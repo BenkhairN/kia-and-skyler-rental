@@ -169,6 +169,7 @@ export function DataProvider({ children }) {
       returnDate: 'return_date',
       total: 'total',
       deposit: 'deposit',
+      paid: 'paid',
     }
     const row = {}
     Object.entries(patch).forEach(([k, v]) => {
