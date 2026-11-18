@@ -138,14 +138,13 @@ export default function Booking() {
 
             <div className="ref-box">
               <span className="small muted">Your booking reference</span>
-              <div className="ref-row">
-                <strong className="ref">{confirmation.id}</strong>
-                <button type="button" className="btn-icon" onClick={copyRef} aria-label="Copy reference" title="Copy reference">
-                  {copied ? <Check size={16} /> : <Copy size={16} />}
-                </button>
-              </div>
+              <strong className="ref">{confirmation.id}</strong>
               <span className="small muted">Keep this to check your booking status or when you call us.</span>
             </div>
+            <button type="button" className="btn btn-outline btn-sm ref-copy" onClick={copyRef}>
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+              {copied ? 'Copied' : 'Copy reference'}
+            </button>
 
             <div className="summary-lines" style={{ textAlign: 'left' }}>
               <div><span>{confirmation.days} {confirmation.days === 1 ? 'day' : 'days'} x {formatCurrency(rate)}</span><span>{formatCurrency(confirmation.total)}</span></div>
