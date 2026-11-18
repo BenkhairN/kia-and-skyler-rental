@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
 import Reveal from '../../components/ui/Reveal'
-import { CalendarDays, Clock, Mail, MapPin, Phone } from 'lucide-react'
+import { CalendarDays, Clock, Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 
 export default function Contact() {
   const { settings } = useData()
+  const whatsapp = `https://wa.me/${(settings.phoneHref || '').replace(/\D/g, '')}?text=${encodeURIComponent("Hi Kia & Skyler Rentals! I'd like to book a car.")}`
 
   const items = [
     { icon: Phone, title: 'Call or text', value: settings.phone, href: settings.phoneHref },
@@ -47,6 +48,10 @@ export default function Contact() {
             <a href={settings.phoneHref} className="btn btn-outline btn-lg">
               <Phone size={18} />
               Call {settings.phone}
+            </a>
+            <a href={whatsapp} target="_blank" rel="noreferrer" className="btn btn-outline btn-lg">
+              <MessageCircle size={18} />
+              WhatsApp
             </a>
             <Link to="/book" className="btn btn-gold btn-lg">
               <CalendarDays size={18} />

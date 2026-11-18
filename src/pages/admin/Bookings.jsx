@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AlertTriangle, CalendarX, Eye, Plus, Search, Trash2 } from 'lucide-react'
+import { AlertTriangle, CalendarX, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { useToast } from '../../context/ToastContext'
 import { bookingStatuses } from '../../data/bookings'
@@ -30,7 +30,7 @@ const emptyForm = {
 }
 
 export default function Bookings() {
-  const { cars, bookings, addBooking, updateBooking, deleteBooking } = useData()
+  const { cars, bookings, settings, addBooking, updateBooking, deleteBooking } = useData()
   const { toast } = useToast()
   const [params] = useSearchParams()
   const [query, setQuery] = useState(params.get('q') || '')
@@ -38,6 +38,7 @@ export default function Bookings() {
   const [viewing, setViewing] = useState(null)
   const [deleting, setDeleting] = useState(null)
   const [creating, setCreating] = useState(false)
+  const [editing, setEditing] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [errors, setErrors] = useState({})
 
@@ -69,10 +70,32 @@ export default function Bookings() {
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
   const formCar = carById(form.carId)
   const formDays = daysBetween(form.pickupDate, form.returnDate)
-  const formConflicts = findConflicts(bookings, form)
+  const formConflicts = findConflicts(bookings, { ...form, id: editing?.id || null })
   const conflictsFor = (b) => findConflicts(bookings, b)
 
-  const submitCreate = async (e) => {
+  const closeForm = () => {
+    setCreating(false)
+    setEditing(null)
+  }
+
+  const openEdit = (b) => {
+    setForm({
+      carId: b.carId,
+      customerName: b.customerName,
+      customerPhone: b.customerPhone,
+      customerEmail: b.customerEmail || '',
+      pickupLocation: b.pickupLocation || pickupLocations[0],
+      pickupDate: b.pickupDate,
+      returnDate: b.returnDate,
+      status: b.status === 'active' ? 'confirmed' : b.status,
+      notes: b.notes || '',
+    })
+    setErrors({})
+    setViewing(null)
+    setEditing(b)
+  }
+
+  const submitForm = async (e) => {
     e.preventDefault()
     const next = {}
     if (!form.carId) next.carId = 'Choose a vehicle.'
@@ -81,19 +104,25 @@ export default function Bookings() {
     if (!form.pickupDate || !form.returnDate || formDays < 1) next.returnDate = 'Choose a valid date range.'
     setErrors(next)
     if (Object.keys(next).length) return
+    const payload = {
+      ...form,
+      days: formDays,
+      dailyRate: formCar?.dailyRate || 0,
+      deposit: editing ? editing.deposit : settings.deposit,
+      total: formDays * (formCar?.dailyRate || 0),
+    }
     try {
-      const id = await addBooking({
-        ...form,
-        days: formDays,
-        dailyRate: formCar?.dailyRate || 0,
-        deposit: 0,
-        total: formDays * (formCar?.dailyRate || 0),
-      })
-      toast(`Booking ${id} created`, 'success')
-      setCreating(false)
-      setForm(emptyForm)
+      if (editing) {
+        await updateBooking(editing.id, payload)
+        toast(`Booking ${editing.id} updated`, 'success')
+      } else {
+        const id = await addBooking(payload)
+        toast(`Booking ${id} created`, 'success')
+        setForm(emptyForm)
+      }
+      closeForm()
     } catch (err) {
-      toast(`Could not create booking: ${err.message}`, 'error')
+      toast(`Could not save booking: ${err.message}`, 'error')
     }
   }
 
@@ -209,6 +238,7 @@ export default function Bookings() {
                       <td>
                         <div className="row-actions">
                           <button type="button" className="btn-icon" onClick={() => setViewing(b)} aria-label="View"><Eye size={16} /></button>
+                          <button type="button" className="btn-icon" onClick={() => openEdit(b)} aria-label="Edit"><Pencil size={16} /></button>
                           <button type="button" className="btn-icon" onClick={() => setDeleting(b)} aria-label="Delete"><Trash2 size={16} /></button>
                         </div>
                       </td>
@@ -222,7 +252,12 @@ export default function Bookings() {
       </section>
 
       <Modal open={Boolean(viewing)} title={`Booking ${viewing?.id || ''}`} onClose={() => setViewing(null)} size={560}
-        footer={<button type="button" className="btn btn-outline" onClick={() => setViewing(null)}>Close</button>}>
+        footer={
+          <>
+            <button type="button" className="btn btn-outline" onClick={() => openEdit(viewing)}><Pencil size={16} /> Edit</button>
+            <button type="button" className="btn btn-outline" onClick={() => setViewing(null)}>Close</button>
+          </>
+        }>
         {viewing && (
           <div className="detail-grid">
             <div className="span-2 flex items-center justify-between">
@@ -253,14 +288,14 @@ export default function Bookings() {
         )}
       </Modal>
 
-      <Modal open={creating} title="New booking" onClose={() => setCreating(false)} size={680}
+      <Modal open={creating || Boolean(editing)} title={editing ? `Edit booking ${editing.id}` : 'New booking'} onClose={closeForm} size={680}
         footer={
           <>
-            <button type="button" className="btn btn-ghost" onClick={() => setCreating(false)}>Cancel</button>
-            <button type="submit" form="booking-form" className="btn btn-gold">Create booking</button>
+            <button type="button" className="btn btn-ghost" onClick={closeForm}>Cancel</button>
+            <button type="submit" form="booking-form" className="btn btn-gold">{editing ? 'Save changes' : 'Create booking'}</button>
           </>
         }>
-        <form id="booking-form" className="form-grid" onSubmit={submitCreate} noValidate>
+        <form id="booking-form" className="form-grid" onSubmit={submitForm} noValidate>
           <div className="field span-2">
             <label>Vehicle</label>
             <select className="select" value={form.carId} onChange={set('carId')}>

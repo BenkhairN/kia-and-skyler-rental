@@ -159,6 +159,8 @@ export function DataProvider({ children }) {
     const map = {
       status: 'status',
       notes: 'notes',
+      carId: 'car_id',
+      dailyRate: 'daily_rate',
       customerName: 'customer_name',
       customerPhone: 'customer_phone',
       customerEmail: 'customer_email',

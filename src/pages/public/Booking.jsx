@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { AlertTriangle, CalendarCheck, CheckCircle2, ChevronLeft, ChevronRight, Copy, Check, Mail, Phone, Search, UserRound, X } from 'lucide-react'
+import { AlertTriangle, CalendarCheck, CheckCircle2, ChevronLeft, ChevronRight, Copy, Check, Mail, MessageCircle, Phone, Search, UserRound, X } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { useToast } from '../../context/ToastContext'
 import { supabase } from '../../lib/supabase'
@@ -161,6 +161,15 @@ export default function Booking() {
               <a href={settings.phoneHref} className="btn btn-gold">
                 <Phone size={16} />
                 Call {settings.phone}
+              </a>
+              <a
+                href={`https://wa.me/${(settings.phoneHref || '').replace(/\D/g, '')}?text=${encodeURIComponent(`Hi! I just booked ${confirmation.id} - ${confirmation.car.name} (${formatDate(form.pickupDate)} to ${formatDate(form.returnDate)}).`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="btn btn-outline"
+              >
+                <MessageCircle size={16} />
+                WhatsApp us
               </a>
             </div>
           </div>
