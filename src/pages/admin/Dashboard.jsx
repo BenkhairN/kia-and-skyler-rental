@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, CalendarCheck, CarFront, Clock, DollarSign, UserRound } from 'lucide-react'
+import { ArrowRight, CalendarCheck, CarFront, Clock, DollarSign } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import StatCard from '../../components/ui/StatCard'
 import Badge from '../../components/ui/Badge'
@@ -34,10 +34,6 @@ export default function Dashboard() {
   const maxTotal = Math.max(...months.map((m) => m.total), 1)
 
   const recent = [...bookings].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)).slice(0, 6)
-  const upcoming = bookings
-    .filter((b) => ['pending', 'confirmed'].includes(b.status))
-    .sort((a, b) => (a.pickupDate > b.pickupDate ? 1 : -1))
-    .slice(0, 5)
 
   const fleetRows = [
     { label: 'Available', value: available, tone: 'success' },
@@ -141,28 +137,6 @@ export default function Dashboard() {
                 })}
               </tbody>
             </table>
-          </div>
-        </section>
-
-        <section className="card panel">
-          <div className="panel-head">
-            <h3>Upcoming pick-ups</h3>
-          </div>
-          <div className="panel-body activity">
-            {upcoming.length === 0 && <p className="muted small">No upcoming pick-ups.</p>}
-            {upcoming.map((b) => {
-              const car = cars.find((c) => c.id === b.carId)
-              return (
-                <div key={b.id} className="activity-item">
-                  <div className="avatar avatar-sm"><UserRound size={14} /></div>
-                  <div style={{ flex: 1 }}>
-                    <strong>{b.customerName}</strong>
-                    <p>{car?.name || 'Vehicle'} &middot; {formatDate(b.pickupDate)} &middot; {b.pickupLocation}</p>
-                  </div>
-                  <Badge status={b.status} />
-                </div>
-              )
-            })}
           </div>
         </section>
       </div>
