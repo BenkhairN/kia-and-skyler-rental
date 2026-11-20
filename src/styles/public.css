@@ -1351,6 +1351,145 @@
 
 .pay-details li span { color: var(--text-muted); }
 
+.pay-methods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.pay-method {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.pay-method:hover { border-color: var(--gold-400); }
+
+.pay-method.active {
+  border-color: var(--gold-400);
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.pay-method svg { color: var(--gold-400); flex-shrink: 0; }
+
+.pay-method span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pay-method small {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.pay-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.stripe-pay {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stripe-pay .gold-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pay-received {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pay-received-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  color: var(--gold-400);
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  flex-shrink: 0;
+}
+
+.pay-received > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.pay-summary {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pay-summary li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pay-summary li span { color: var(--text-muted); }
+
+.pay-summary-total {
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.pay-transfer summary {
+  cursor: pointer;
+  color: var(--gold-400);
+  font-size: 14px;
+  user-select: none;
+}
+
+.pay-transfer[open] summary { margin-bottom: 8px; }
+
+.pay-amount {
+  margin: 0;
+  font-size: 16px;
+}
+
+.pay-amount strong { color: var(--gold-400); }
+
+.pay-choice-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--gold-400);
+  font-size: 14px;
+}
+
+@media (max-width: 520px) {
+  .pay-methods { grid-template-columns: 1fr; }
+}
+
 .ref-copy {
   display: flex;
   width: fit-content;

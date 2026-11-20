@@ -31,7 +31,7 @@ export const faqs = [
   },
   {
     q: 'Can I check on my booking?',
-    a: 'Yes. When you book you get a reference (like BK-1008). Enter it with your phone number on the My Booking page to see your status any time.',
+    a: 'Yes. When you book you get a reference (like A4F9C2E1B7). Enter it with your phone number on the My Booking page to see your status any time.',
   },
   {
     q: 'Can I cancel a booking?',

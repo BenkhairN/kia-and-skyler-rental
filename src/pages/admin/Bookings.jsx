@@ -215,11 +215,9 @@ export default function Bookings() {
             <table className="table">
               <thead>
                 <tr>
-                  {th('id', 'Reference')}
                   {th('customer', 'Customer')}
                   {th('vehicle', 'Vehicle')}
                   {th('pickupDate', 'Dates')}
-                  {th('createdAt', 'Booked')}
                   {th('total', 'Total')}
                   {th('status', 'Status')}
                   <th className="text-right">Actions</th>
@@ -231,22 +229,20 @@ export default function Bookings() {
                   const clash = conflictsFor(b)
                   return (
                     <tr key={b.id}>
-                      <td className="td-strong">
-                        <div className="flex items-center gap-2">
-                          {b.id}
-                          {clash.length > 0 && (
-                            <span className="conflict-flag" title={`Overlaps with ${clash.map((c) => c.id).join(', ')}`}>
-                              <AlertTriangle size={14} />
-                            </span>
-                          )}
-                        </div>
-                      </td>
                       <td>
                         <div className="cell-person">
                           <div className="avatar avatar-sm">{initials(b.customerName)}</div>
                           <div>
                             <strong>{b.customerName}</strong>
                             <span>{b.customerPhone}</span>
+                            <span className="td-strong small ref-cell" title={b.id}>
+                              {b.id}
+                              {clash.length > 0 && (
+                                <span className="conflict-flag" title={`Overlaps with ${clash.map((c) => c.id).join(', ')}`}>
+                                  <AlertTriangle size={13} />
+                                </span>
+                              )}
+                            </span>
                           </div>
                         </div>
                       </td>
@@ -256,12 +252,21 @@ export default function Bookings() {
                           {car && <span>{car.color}</span>}
                         </div>
                       </td>
-                      <td className="td-muted">{shortDate(b.pickupDate)} – {shortDate(b.returnDate)}</td>
                       <td className="td-muted">
-                        {shortStamp(b.createdAt)}
-                        <div className="small" style={{ opacity: 0.7 }}>{timeStamp(b.createdAt)}</div>
+                        <div>{shortDate(b.pickupDate)}</div>
+                        <div>{shortDate(b.returnDate)}</div>
+                        <div className="small" style={{ opacity: 0.7 }}>Booked {shortStamp(b.createdAt)}</div>
                       </td>
-                      <td className="td-strong">{formatCurrency(b.total)}</td>
+                      <td className="td-strong">
+                        {formatCurrency(b.total)}
+                        {b.testPayment === 'paid' || b.paid ? (
+                          <div className="small" style={{ color: 'var(--green-400, #5bc27d)' }}>Paid online</div>
+                        ) : b.testPayment ? (
+                          <div className="small gold-text">Stripe test: {b.testPayment}</div>
+                        ) : b.paymentMethod === 'pickup' ? (
+                          <div className="small gold-text">At pick-up</div>
+                        ) : null}
+                      </td>
                       <td>
                         <div className="status-cell">
                           <select
@@ -337,6 +342,7 @@ export default function Bookings() {
             <div><span>Duration</span><strong>{viewing.days} {viewing.days === 1 ? 'day' : 'days'}</strong></div>
             <div><span>Total</span><strong className="gold-text">{formatCurrency(viewing.total)}</strong></div>
             <div><span>Payment</span><strong style={{ color: viewing.paid ? 'var(--green-400, #5bc27d)' : 'var(--text-muted)' }}>{viewing.paid ? 'Paid' : 'Unpaid'}</strong></div>
+            <div><span>Method</span><strong>{viewing.paymentMethod === 'pickup' ? 'Pay at pick-up' : viewing.paymentMethod === 'online' ? 'Online' : 'Not chosen'}</strong></div>
             <div className="span-2"><span>Notes</span><strong style={{ fontWeight: 400 }} className="muted">{viewing.notes || 'No notes'}</strong></div>
             <div><span>Requested on</span><strong>{formatDate(viewing.createdAt)}</strong></div>
             {conflictsFor(viewing).length > 0 && (

@@ -52,6 +52,7 @@ export const bookingFromRow = (r) => ({
   total: Number(r.total),
   status: r.status,
   paid: Boolean(r.paid),
+  paymentMethod: r.payment_method || null,
   notes: r.notes,
   createdAt: r.created_at,
 })
@@ -68,6 +69,7 @@ export const bookingToRow = (b) => ({
   deposit: Number(b.deposit ?? 0),
   total: Number(b.total),
   status: b.status || 'pending',
+  payment_method: b.paymentMethod || null,
   notes: b.notes || '',
 })
 

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { CalendarDays, Car, CheckCircle2, Clock, Hash, KeyRound, Landmark, MapPin, Phone, Search, Undo2, UserRound, XCircle } from 'lucide-react'
+import { Banknote, CalendarDays, Car, CheckCircle2, Clock, CreditCard, Hash, KeyRound, MapPin, Phone, Search, Undo2, UserRound, XCircle } from 'lucide-react'
 import { useData } from '../../context/DataContext'
 import { supabase } from '../../lib/supabase'
 import Badge from '../../components/ui/Badge'
 import CarImage from '../../components/ui/CarImage'
+import StripeTestPayment from '../../components/ui/StripeTestPayment'
 import { daysBetween, formatCurrency, formatDate, todayISO } from '../../utils/format'
 
 const steps = [
@@ -25,6 +26,8 @@ export default function BookingStatus() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [credentials, setCredentials] = useState(null)
+  const [method, setMethod] = useState('online')
+  const [testPaid, setTestPaid] = useState(false)
 
   const refresh = useCallback(async (creds) => {
     const { data, error: rpcError } = await supabase.rpc('lookup_booking', {
@@ -33,6 +36,21 @@ export default function BookingStatus() {
     })
     if (!rpcError && data?.length) setResult(data[0])
   }, [])
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem('bookingLookup')
+      if (!saved) return
+      const creds = JSON.parse(saved)
+      const refParam = params.get('ref')
+      if (refParam) creds.ref = refParam
+      if (!creds.ref || !creds.phone) return
+      setRef(creds.ref)
+      setPhone(creds.phone)
+      setCredentials(creds)
+      refresh(creds)
+    } catch { /* empty */ }
+  }, [params, refresh])
 
   useEffect(() => {
     if (!credentials) return undefined
@@ -74,7 +92,29 @@ export default function BookingStatus() {
     }
     setError('')
     setResult(match)
-    setCredentials({ ref: code, phone })
+    const creds = { ref: code, phone }
+    setCredentials(creds)
+    try { sessionStorage.setItem('bookingLookup', JSON.stringify(creds)) } catch { /* empty */ }
+  }
+
+  const onTestState = useCallback((s) => setTestPaid(s === 'paid'), [])
+  const [choosing, setChoosing] = useState(false)
+
+  const choosePickup = async () => {
+    if (choosing || !credentials) return
+    setChoosing(true)
+    const { error: rpcError } = await supabase.rpc('choose_payment_method', {
+      p_reference: credentials.ref,
+      p_phone: credentials.phone,
+      p_method: 'pickup',
+    })
+    setChoosing(false)
+    if (rpcError) {
+      setError(rpcError.message || 'Could not save your choice. Please try again.')
+      return
+    }
+    setResult((r) => ({ ...r, payment_method: 'pickup' }))
+    setError('')
   }
 
   const days = result ? daysBetween(result.pickup_date, result.return_date) : 0
@@ -83,6 +123,11 @@ export default function BookingStatus() {
       ? 'active'
       : result?.status
   const cancelled = result?.status === 'cancelled'
+  const chosenMethod = result?.payment_method
+
+  useEffect(() => {
+    if (chosenMethod) setMethod(chosenMethod)
+  }, [chosenMethod])
   const current = result ? stepIndex(effectiveStatus) : -1
 
   return (
@@ -103,7 +148,7 @@ export default function BookingStatus() {
                 <label htmlFor="ref">Booking reference</label>
                 <div className="input-icon">
                   <Hash size={16} />
-                  <input id="ref" className="input" placeholder="BK-AB12CD34EF56" value={ref} onChange={(e) => setRef(e.target.value)} autoCapitalize="characters" />
+                  <input id="ref" className="input" placeholder="A4F9C2E1B7" value={ref} onChange={(e) => setRef(e.target.value)} autoCapitalize="characters" />
                 </div>
               </div>
               <div className="field span-2">
@@ -185,25 +230,57 @@ export default function BookingStatus() {
 
               {!cancelled && effectiveStatus !== 'pending' && (
                 <div className="pay-card mt-4">
-                  <div className="pay-head">
-                    <Landmark size={18} />
-                    <strong>Payment</strong>
-                    {result.paid && <span className="badge badge-success">Received</span>}
-                  </div>
-                  {result.paid ? (
-                    <p className="muted small">We have received your payment. Thank you!</p>
+                  {result.paid || testPaid ? (
+                    <div className="pay-received">
+                      <span className="pay-received-icon"><CheckCircle2 size={22} /></span>
+                      <div>
+                        <strong>Payment received</strong>
+                        <p className="muted small">
+                          {result.paid
+                            ? 'We have received your payment. Thank you!'
+                            : 'Test payment received. Your real payment status is unchanged.'}
+                        </p>
+                      </div>
+                      {testPaid && !result.paid && <span className="badge badge-warning">Test mode</span>}
+                    </div>
                   ) : (
                     <>
-                      <p className="muted small">
-                        Please transfer <strong>{formatCurrency((result.total || 0) + (result.deposit ?? settings.deposit))} {settings.bankCurrency}</strong> to:
-                      </p>
-                      <ul className="pay-details">
-                        <li><span>Bank</span><strong>{settings.bankName}</strong></li>
-                        <li><span>Account name</span><strong>{settings.bankAccountName}</strong></li>
-                        <li><span>Account type</span><strong>{settings.bankAccountType}</strong></li>
-                        <li><span>Account number</span><strong>{settings.bankAccountNumber}</strong></li>
-                      </ul>
-                      <p className="muted small">Send your receipt on WhatsApp so we can mark your booking as paid.</p>
+                      <div className="pay-head"><strong>How would you like to pay?</strong></div>
+                      <div className="pay-methods" role="radiogroup" aria-label="Payment method">
+                        <button type="button" role="radio" aria-checked={method === 'online'} className={`pay-method ${method === 'online' ? 'active' : ''}`} onClick={() => setMethod('online')}>
+                          <CreditCard size={20} />
+                          <span><strong>Pay online now</strong><small>Secure card payment</small></span>
+                        </button>
+                        <button type="button" role="radio" aria-checked={method === 'pickup'} className={`pay-method ${method === 'pickup' ? 'active' : ''}`} onClick={() => setMethod('pickup')}>
+                          <Banknote size={20} />
+                          <span><strong>Pay at pick-up</strong><small>Cash, card or transfer</small></span>
+                        </button>
+                      </div>
+
+                      {method === 'online' ? (
+                        <div className="pay-body">
+                          {import.meta.env.DEV && import.meta.env.VITE_ENABLE_STRIPE_TEST_CHECKOUT === 'true' && credentials && result.status === 'confirmed' ? (
+                            <StripeTestPayment key={`${credentials.ref}:${credentials.phone}`} booking={result} credentials={credentials} onState={onTestState} />
+                          ) : (
+                            <p className="muted small">Online card payment is coming soon. Choose pay at pick-up, or contact us to pay by bank transfer.</p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="pay-body">
+                          <p className="pay-amount">
+                            Pay <strong>{formatCurrency((result.total || 0) + (result.deposit ?? settings.deposit))} {settings.bankCurrency}</strong> at pick-up
+                          </p>
+                          <p className="muted small">Cash or card on arrival — the deposit is returned when the car comes back. Just bring your license.</p>
+                          {chosenMethod === 'pickup' ? (
+                            <p className="pay-choice-note"><CheckCircle2 size={15} /> We'll see you at pick-up.</p>
+                          ) : (
+                            <button type="button" className="btn btn-gold" onClick={choosePickup} disabled={choosing}>
+                              <Banknote size={16} />
+                              {choosing ? 'Saving…' : "I'll pay at pick-up"}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </>
                   )}
                 </div>

@@ -57,7 +57,14 @@ export function DataProvider({ children }) {
   const fetchBookings = useCallback(async () => {
     const { data, error } = await supabase.from('bookings').select('*').order('created_at', { ascending: false })
     if (error) console.error('fetchBookings failed:', error.message)
-    if (data) setBookings(data.map(bookingFromRow))
+    if (data) {
+      let testPayments = []
+      if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_STRIPE_TEST_CHECKOUT === 'true') {
+        const result = await supabase.from('stripe_test_payments').select('reference, state')
+        testPayments = result.data || []
+      }
+      setBookings(data.map((row) => ({ ...bookingFromRow(row), testPayment: testPayments.find((p) => p.reference === row.reference)?.state })))
+    }
   }, [])
 
   const fetchFeedback = useCallback(async () => {
@@ -85,6 +92,12 @@ export function DataProvider({ children }) {
       setMessages([])
     }
   }, [user, fetchBookings, fetchFeedback])
+
+  useEffect(() => {
+    if (!user || !import.meta.env.DEV || import.meta.env.VITE_ENABLE_STRIPE_TEST_CHECKOUT !== 'true') return undefined
+    const timer = setInterval(fetchBookings, 15000)
+    return () => clearInterval(timer)
+  }, [user, fetchBookings])
 
   useEffect(() => {
     const notify = (event, rows) => {
@@ -170,6 +183,7 @@ export function DataProvider({ children }) {
       total: 'total',
       deposit: 'deposit',
       paid: 'paid',
+      paymentMethod: 'payment_method',
     }
     const row = {}
     Object.entries(patch).forEach(([k, v]) => {

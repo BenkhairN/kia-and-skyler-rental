@@ -473,12 +473,33 @@
   color: var(--text-dim);
 }
 
+.ref-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px !important;
+  letter-spacing: 0.03em;
+  color: var(--text-dim) !important;
+  font-family: ui-monospace, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
 .status-select {
-  padding: 6px 30px 6px 10px;
+  padding: 6px 24px;
+  text-align: center;
+  text-align-last: center;
   font-size: 13px;
   border-radius: 999px;
   min-width: 130px;
   background-position: right 10px center;
+}
+
+.status-select option {
+  text-align: center;
+  text-align-last: center;
 }
 
 .status-select.tone-success { border-color: rgba(46, 204, 138, 0.4); color: var(--success); }

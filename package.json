@@ -7,14 +7,17 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "payments:dev": "node --env-file=.env.payments.local server/stripe-payments.mjs",
+    "test:payments": "node --test server/stripe-payments.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.1",
     "lucide-react": "^1.72.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-router-dom": "^7.18.5"
+    "react-router-dom": "^7.18.5",
+    "stripe": "23.1.0"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
