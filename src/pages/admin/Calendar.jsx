@@ -10,8 +10,6 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const monthLabel = (year, month) =>
   new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 
-const covers = (b, iso) => b.pickupDate <= iso && iso < b.returnDate
-
 export default function Calendar() {
   const { cars, bookings } = useData()
   const navigate = useNavigate()
@@ -40,7 +38,7 @@ export default function Calendar() {
       if (b.status === 'cancelled') return
       let cursor = b.pickupDate
       let guard = 0
-      while (cursor < b.returnDate && guard < 400) {
+      while (cursor <= b.returnDate && guard < 400) {
         ;(map[cursor] ||= []).push(b)
         cursor = addDays(cursor, 1)
         guard += 1
