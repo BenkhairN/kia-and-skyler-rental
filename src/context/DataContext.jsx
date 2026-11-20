@@ -36,7 +36,13 @@ export function DataProvider({ children }) {
 
   const fetchSettings = useCallback(async () => {
     const { data } = await supabase.from('site_settings').select('data').eq('id', true).maybeSingle()
-    if (data?.data) setSettings({ ...defaultSettings, ...data.data })
+    if (data?.data) {
+      const merged = { ...defaultSettings, ...data.data }
+      const telOf = (phone) => `tel:+1${(phone || '').replace(/\D/g, '')}`
+      if (!merged.phoneHref && merged.phone) merged.phoneHref = telOf(merged.phone)
+      if (!merged.secondaryPhoneHref && merged.secondaryPhone) merged.secondaryPhoneHref = telOf(merged.secondaryPhone)
+      setSettings(merged)
+    }
   }, [])
 
   const fetchRanges = useCallback(async () => {
