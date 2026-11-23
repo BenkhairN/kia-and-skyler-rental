@@ -1911,7 +1911,7 @@
 }
 
 .feedback-panel {
-  width: 300px;
+  width: min(300px, calc(100vw - 32px));
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -2009,4 +2009,41 @@
   font-size: 12px;
   color: var(--text-dim);
   text-align: center;
+}
+
+/* Small-screen polish */
+@media (max-width: 520px) {
+  .stepper-car {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .stepper-car .media {
+    width: 100%;
+    height: 120px;
+  }
+
+  .stepper-info {
+    text-align: center;
+  }
+
+  .cta-band-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .cta-band-actions .btn {
+    justify-content: center;
+  }
+
+  .success-panel {
+    padding: 40px 20px;
+  }
+
+  .footer-grid {
+    padding: 40px 20px 32px;
+  }
 }
