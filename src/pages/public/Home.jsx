@@ -32,15 +32,15 @@ export default function Home() {
         <div className="hero-bg" />
         <div className="container hero-grid">
           <div>
-            <span className="eyebrow">{settings.tagline}</span>
+            <span className="eyebrow hero-in">{settings.tagline}</span>
             <h1 className="hero-title">
-              <img src="/images/logo.webp" alt="Kia & Skyler Rentals" className="hero-logo" />
+              <img src="/images/logo.webp" alt="Kia & Skyler Rentals" className="hero-logo hero-in hero-d1" />
             </h1>
-            <p className="hero-text">
+            <p className="hero-text hero-in hero-d2">
               Clean, reliable vehicles delivered to you anywhere on Grand Bahama Island. Simple pricing,
               a small refundable deposit, and friendly service around the clock.
             </p>
-            <div className="hero-actions">
+            <div className="hero-actions hero-in hero-d3">
               <Link to="/book" className="btn btn-gold btn-lg">
                 Book a Car
                 <ArrowRight size={18} />
@@ -49,14 +49,14 @@ export default function Home() {
                 View Car
               </Link>
             </div>
-            <div className="hero-meta">
+            <div className="hero-meta hero-in hero-d4">
               <div><Phone size={16} /> {settings.phone}</div>
               <div><Clock size={16} /> {settings.hours}</div>
               <div><ShieldCheck size={16} /> ${settings.deposit} refundable deposit</div>
             </div>
           </div>
 
-          <div className="hero-visual">
+          <div className="hero-visual hero-in hero-d3">
             <div className="hero-card">
               {settings.heroImage ? (
                 <CarImage key={settings.heroImage} src={settings.heroImage} alt={settings.businessName} label="Hero photo coming soon" iconSize={64} />
@@ -66,7 +66,7 @@ export default function Home() {
                 </div>
               )}
             </div>
-            <div className="price-tag">
+            <div className="price-tag hero-pop">
               <small>Price</small>
               <strong className="gold-text">
                 ${settings.dailyRate}
