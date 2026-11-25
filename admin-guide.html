@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kia &amp; Skyler Rentals — Admin Guide</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #1a2238;
+    line-height: 1.6;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 40px 32px;
+    font-size: 14px;
+  }
+  .cover {
+    text-align: center;
+    padding: 120px 0 100px;
+    page-break-after: always;
+  }
+  .cover .logo { font-size: 44px; font-weight: 800; letter-spacing: 2px; }
+  .cover .logo span { color: #d4a821; }
+  .cover h1 { font-size: 26px; font-weight: 600; margin-top: 24px; color: #444; }
+  .cover p { color: #777; margin-top: 8px; }
+  h1 { font-size: 22px; border-bottom: 3px solid #d4a821; padding-bottom: 8px; margin-top: 40px; }
+  h2 { font-size: 16px; margin-top: 28px; color: #0d1b3e; }
+  h3 { font-size: 14px; margin-top: 18px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th { background: #0d1b3e; color: #fff; text-align: left; padding: 8px 10px; }
+  td { border: 1px solid #ddd; padding: 8px 10px; vertical-align: top; }
+  tr:nth-child(even) td { background: #f7f8fb; }
+  .tip { background: #fdf6e0; border-left: 4px solid #d4a821; padding: 10px 14px; margin: 14px 0; }
+  .warn { background: #fdecec; border-left: 4px solid #d6455c; padding: 10px 14px; margin: 14px 0; }
+  code { background: #eef1f7; padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+  .flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0; }
+  .flow .box { background: #0d1b3e; color: #fff; padding: 8px 16px; border-radius: 999px; font-weight: 600; font-size: 13px; }
+  .flow .arrow { color: #999; font-size: 18px; }
+  ol li, ul li { margin: 6px 0; }
+  .pagebreak { page-break-before: always; }
+  .footer-note { margin-top: 60px; color: #999; font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="logo">Kia <span>&amp;</span> Skyler Rentals</div>
+  <h1>Admin Website Guide</h1>
+  <p>Managing vehicles, bookings, customers, feedback and settings</p>
+  <p>Grand Bahama Island · November 2026</p>
+</div>
+
+<h1>1. Getting Started</h1>
+
+<h2>Logging in</h2>
+<ol>
+  <li>Go to your website and scroll to the bottom of any page, then click <strong>Admin</strong> — or go directly to <code>yourwebsite.com/admin</code>.</li>
+  <li>Enter your admin username and password.</li>
+  <li>You will land on the <strong>Dashboard</strong>.</li>
+</ol>
+
+<div class="warn"><strong>Keep your admin login private.</strong> Anyone with these credentials can see bookings, edit vehicles, and change prices. To change your password, ask your developer.</div>
+
+<h2>Finding your way around</h2>
+<p>The left sidebar contains all admin sections:</p>
+<table>
+  <tr><th>Section</th><th>What it does</th></tr>
+  <tr><td><strong>Dashboard</strong></td><td>Overview of your fleet, bookings and revenue</td></tr>
+  <tr><td><strong>Vehicles</strong></td><td>Add, edit and remove rental cars</td></tr>
+  <tr><td><strong>Bookings</strong></td><td>All rental requests — confirm, edit, complete or cancel</td></tr>
+  <tr><td><strong>Calendar</strong></td><td>Month view showing which vehicle is out on which days</td></tr>
+  <tr><td><strong>Customers</strong></td><td>Everyone who has booked, with contact details</td></tr>
+  <tr><td><strong>Feedback</strong></td><td>Messages and reviews sent from the website</td></tr>
+  <tr><td><strong>Settings</strong></td><td>Business info, prices, bank details and website content</td></tr>
+</table>
+
+<div class="pagebreak"></div>
+<h1>2. Dashboard</h1>
+<p>The Dashboard gives you a quick snapshot:</p>
+<ul>
+  <li><strong>Total vehicles</strong> — how many cars are in your fleet and how many are available right now</li>
+  <li><strong>Active &amp; confirmed</strong> — confirmed bookings, plus pending requests waiting on you</li>
+  <li><strong>Revenue</strong> — total from active and completed rentals</li>
+  <li><strong>Pending requests</strong> — new booking requests waiting for confirmation</li>
+  <li><strong>Revenue by month</strong> — bar chart of the last 6 months</li>
+  <li><strong>Recent bookings</strong> — the 6 newest requests; click one to open it in Bookings</li>
+</ul>
+
+<h1>3. Vehicles</h1>
+
+<h2>Adding a vehicle</h2>
+<ol>
+  <li>Go to <strong>Vehicles</strong> → <strong>Add vehicle</strong>.</li>
+  <li>Fill in the details: name, year, color, category, seats, transmission, fuel type, daily rate and features.</li>
+  <li>Upload photos — the first photo becomes the <strong>cover photo</strong> shown on the website.</li>
+  <li>Click <strong>Save</strong>. The vehicle appears on the public site immediately.</li>
+</ol>
+
+<h2>Editing a vehicle</h2>
+<p>Click the vehicle's <strong>Edit</strong> button in the Vehicles list. Change any details and save. Changes go live instantly.</p>
+
+<h2>Photos</h2>
+<ul>
+  <li>Upload multiple photos per vehicle — customers see them as a gallery on the car's page.</li>
+  <li>Hover a photo to set it as <strong>cover</strong>, reorder or delete it.</li>
+  <li>Use clear, horizontal photos — around 1600×1000 pixels looks best.</li>
+</ul>
+
+<h2>Maintenance mode</h2>
+<p>If a vehicle is being repaired or unavailable, flip its status toggle to <strong>Maintenance</strong>. The car stays listed but shows as unavailable so customers can't book it.</p>
+
+<div class="tip"><strong>Availability is automatic.</strong> The website checks booking dates — a car with a confirmed booking for those dates can't be double-booked. You don't need to mark cars as "rented" manually.</div>
+
+<div class="pagebreak"></div>
+<h1>4. Bookings</h1>
+<p>This is where you spend most of your time. The table shows every rental request:</p>
+<table>
+  <tr><th>Column</th><th>What's in it</th></tr>
+  <tr><td><strong>Customer</strong></td><td>Name, phone number, and booking reference stacked together</td></tr>
+  <tr><td><strong>Vehicle</strong></td><td>The requested car and its color</td></tr>
+  <tr><td><strong>Dates</strong></td><td>Pick-up date, return date, and when the booking was made</td></tr>
+  <tr><td><strong>Total</strong></td><td>Amount due, and how they'll pay: <em>At pick-up</em> (gold) or <em>Paid online</em> (green)</td></tr>
+  <tr><td><strong>Status</strong></td><td>Dropdown to change the booking status</td></tr>
+  <tr><td><strong>Actions</strong></td><td>Open details, edit, or delete</td></tr>
+</table>
+
+<h2>The booking workflow</h2>
+<div class="flow">
+  <span class="box">Pending</span><span class="arrow">→</span>
+  <span class="box">Confirmed</span><span class="arrow">→</span>
+  <span class="box">Completed</span>
+</div>
+<ol>
+  <li><strong>Customer submits a request</strong> — it arrives as <em>Pending</em>. You get a notification popup if you're logged in.</li>
+  <li><strong>Contact the customer</strong> — call or WhatsApp them to confirm dates, price and pick-up location.</li>
+  <li><strong>Change status to Confirmed</strong> — only after you've spoken with them. The customer can now see "Confirmed" when they check their booking.</li>
+  <li><strong>"Picked up" appears automatically</strong> — during the rental period, the booking shows as picked up on the customer's status page. No action needed.</li>
+  <li><strong>After return, set to Completed</strong> — marks the rental finished.</li>
+  <li><strong>Cancelled</strong> — if the customer cancels or the request doesn't work out, set it to Cancelled. The car becomes bookable for those dates again.</li>
+</ol>
+
+<h2>Editing a booking</h2>
+<p>Open a booking and click <strong>Edit</strong> to change the vehicle, dates, customer details, pick-up location, notes, status and payment info.</p>
+
+<h2>Payment method</h2>
+<ul>
+  <li>Customers choose <strong>Pay online</strong> or <strong>I'll pay at pick-up</strong> on their booking status page after you confirm.</li>
+  <li>The Total column shows their choice: <em>At pick-up</em> or <em>Paid online</em>.</li>
+  <li>If someone chose pick-up but wants to pay online later, they can switch on their status page — you'll see it update.</li>
+</ul>
+
+<h2>Search &amp; sort</h2>
+<ul>
+  <li>Use the search box to find a booking by name, phone, reference or vehicle.</li>
+  <li>Click column headers to sort by date, total, etc.</li>
+</ul>
+
+<div class="pagebreak"></div>
+<h1>5. Calendar</h1>
+<p>A month view of your rentals:</p>
+<ul>
+  <li>Each colored chip is a booking — the color shows its status (<span style="color:#d4a821">pending</span>, <span style="color:#4f86ff">confirmed</span>, <span style="color:#2ecc8a">picked up</span>, <span style="color:#888">completed</span>).</li>
+  <li>The chip spans every day from pick-up through the return date.</li>
+  <li>Click a chip to jump to that booking in the Bookings list.</li>
+  <li>Use the arrows to move between months; <strong>This month</strong> jumps back to today.</li>
+</ul>
+<div class="tip">Use the calendar before confirming a booking — it's the fastest way to spot a vehicle that's already out.</div>
+
+<h1>6. Customers</h1>
+<p>A card per customer showing their name, contact details, how many bookings they've made, and total spent. Useful for recognizing repeat customers.</p>
+
+<h1>7. Feedback</h1>
+<p>Visitors can leave messages and star ratings through the floating feedback box on the website.</p>
+<ul>
+  <li><strong>Unread</strong> messages are highlighted with a gold border and dot.</li>
+  <li>Click a message to read the full text — opening it marks it as read.</li>
+  <li>Each message shows the sender's name, rating and any contact info they left.</li>
+</ul>
+
+<div class="pagebreak"></div>
+<h1>8. Settings</h1>
+<p>Settings → Business controls everything shown on the public website:</p>
+<table>
+  <tr><th>Setting</th><th>What it changes</th></tr>
+  <tr><td><strong>Business name / tagline</strong></td><td>Site title and hero text</td></tr>
+  <tr><td><strong>Phone / secondary phone</strong></td><td>Shown on Contact page, navbar and buttons. The "tel: link" fields control what happens when tapped.</td></tr>
+  <tr><td><strong>Email / address / hours</strong></td><td>Contact page and footer</td></tr>
+  <tr><td><strong>Daily rate</strong></td><td>Default price shown on the homepage price tag</td></tr>
+  <tr><td><strong>Refundable deposit</strong></td><td>Deposit amount shown to customers and used in payment calculations</td></tr>
+  <tr><td><strong>Minimum age</strong></td><td>Shown in FAQs and booking requirements</td></tr>
+  <tr><td><strong>Bank details</strong></td><td>Your bank name, account name, number and type — used for transfer payments</td></tr>
+  <tr><td><strong>Hero / About images</strong></td><td>Photos on the homepage and About page</td></tr>
+</table>
+<p>Changes save to the website immediately after clicking Save.</p>
+
+<h1>9. How a customer books (for reference)</h1>
+<ol>
+  <li>Browses <strong>Cars</strong>, opens a vehicle, picks dates on the availability calendar.</li>
+  <li>Clicks <strong>Book</strong>, enters their name, phone, email, pick-up location and dates.</li>
+  <li>Gets a <strong>10-character reference</strong> (like <code>A4F9C2E1B7</code>) — they use it to check their status.</li>
+  <li>On <strong>Check booking</strong> they enter the reference + phone number to see their status.</li>
+  <li>After you confirm, they choose <strong>Pay online</strong> or <strong>Pay at pick-up</strong>.</li>
+</ol>
+
+<h1>10. Quick tips</h1>
+<ul>
+  <li>Always <strong>call/WhatsApp the customer before confirming</strong> — confirming tells them the booking is real.</li>
+  <li>The booking <strong>reference + phone</strong> is the "password" to look up a booking — tell customers to screenshot it.</li>
+  <li>If a car is in the shop, use <strong>Maintenance</strong> — don't delete it.</li>
+  <li>Deleting a booking removes it permanently. Prefer <strong>Cancelled</strong> for real bookings so you keep a record.</li>
+  <li>Everything updates live — a customer looking at their status sees changes the moment you make them.</li>
+</ul>
+
+<div class="footer-note">Kia &amp; Skyler Rentals · Admin Guide · Questions? Contact your developer.</div>
+
+</body>
+</html>
